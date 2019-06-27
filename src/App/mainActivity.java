@@ -107,15 +107,10 @@ public class mainActivity extends JPanel{
         Image newImage = image.getScaledInstance(900, 900, java.awt.Image.SCALE_SMOOTH);  //Scale up the image in size
         ImageIcon imageIcon = new ImageIcon(newImage);
         JLabel jLabel = new JLabel();
-        /*jLabel.setIcon(imageIcon);
+        jLabel.setIcon(imageIcon);
         jLabel.setLayout(new GridLayout(1, 2));
-        layeredPane.add(jLabel,1,0);*/
+        layeredPane.add(jLabel,1,0);
         //frame.getContentPane().add(jLabel, BorderLayout.CENTER);
-
-        JLabel label = new JLabel();
-        label.setText("Hello World");
-        label.setBounds(1,1,100,100);
-        layeredPane.add(label,6,0);
 
 
         JComboBox jComboBox1 = new JComboBox();  //Dropdown box creator

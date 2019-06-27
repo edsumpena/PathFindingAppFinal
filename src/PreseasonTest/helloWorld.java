@@ -3,6 +3,7 @@ package PreseasonTest;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 
 public class helloWorld extends JComponent {
@@ -28,25 +29,31 @@ public class helloWorld extends JComponent {
         layeredPane.setPreferredSize(new Dimension(300, 310));
 
         //Add the ubiquitous "Hello World" label.
-        JLabel label = new JLabel("Hello World");
-        label.setBounds(0,0,10,10);
-        label.setOpaque(true);
-        layeredPane.add(label,  1, 0);
+        JButton button = new JButton("Hello World");
+        button.setBounds(0,0,10,10);
+        button.setOpaque(true);
+        layeredPane.add(button,  1, 0);
 
         JLabel label2 = new JLabel("Hello Earth");
         label2.setBounds(0,0,10,10);
-        label.setOpaque(true);
+        label2.setOpaque(true);
         layeredPane.add(label2, 2, 0);
 
         //layeredPane.setBorder(BorderFactory.createTitledBorder("World on Top"));
         layeredPane.add(paintPanel,3,0);
         add(paintPanel);
-        //add(label);
+        add(button);
         //add(label2);
         add(Box.createRigidArea(new Dimension(0, 10)));
         layeredPane.moveToFront(paintPanel);
         layeredPane.setLayer(paintPanel,1,1);
         add(layeredPane);
+        button.addActionListener(new ActionListener() {  //Button onClickListener
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                paintPanel.repaint();
+            }
+        });
     }
     public static JPanel paintPanel = new JPanel() {
         @Override
