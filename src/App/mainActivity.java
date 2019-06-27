@@ -35,6 +35,8 @@ public class mainActivity extends JPanel{
     static boolean alreadyAdded = false;
     static boolean mouseExited = true;
     static boolean mouseClicked = false;
+    static int xOffset = -40;
+    static int yOffset = -57;
     //private static JLabel mimage;
 
 
@@ -54,16 +56,16 @@ public class mainActivity extends JPanel{
         frame.setVisible(true);
         frame.requestFocusInWindow();
 
-        threads.execute(frame);
+        threads.executeFocus(frame);
     }
     public static class threads extends Thread{
-        public static void execute(JFrame lp){
-            int unstoppable = 1;
+        public static void executeFocus(JFrame frame){
+            boolean unstoppable = true;
             Thread one = new Thread() {
                 public void run() {
-                    while(unstoppable == 1){
+                    while(unstoppable){
                         if(mouseClicked) {
-                            lp.requestFocus();
+                            frame.requestFocus();
                             try {
                                 Thread.sleep(100);
                             } catch(Exception e){
@@ -73,8 +75,22 @@ public class mainActivity extends JPanel{
                     }
                 }
             };
-
             one.start();
+        }
+        public static void executeBringToFront(JLayeredPane lp){
+            boolean unstoppable = true;
+            Thread one = new Thread(){
+                public void run(){
+                    while(unstoppable){
+                        draw.putToFront(lp);
+                        try {
+                            Thread.sleep(100);
+                        } catch(Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            };
         }
     }
     public mainActivity() {
@@ -96,6 +112,11 @@ public class mainActivity extends JPanel{
         layeredPane.add(jLabel,1,0);*/
         //frame.getContentPane().add(jLabel, BorderLayout.CENTER);
 
+        JLabel label = new JLabel();
+        label.setText("Hello World");
+        label.setBounds(1,1,100,100);
+        layeredPane.add(label,6,0);
+
 
         JComboBox jComboBox1 = new JComboBox();  //Dropdown box creator
         jComboBox1.addItem("[Select]");  //Dropdown options
@@ -113,6 +134,7 @@ public class mainActivity extends JPanel{
         JButton button = new JButton("Get Path Data");  //"Get Path Data" button
         button.setPreferredSize(new Dimension(115, 20));
         button.setFocusable(false);
+
         layeredPane.add(button, 3,0);
         //frame.getContentPane().add(button, BorderLayout.WEST);
 
@@ -123,10 +145,10 @@ public class mainActivity extends JPanel{
         layeredPane.add(button,4,0);
         //frame.getContentPane().add(tf, BorderLayout.SOUTH);
 
+        layeredPane.moveToBack(jLabel);
+
         draw.backgroundTransparent(true);
         draw.circle(layeredPane);
-
-        layeredPane.moveToBack(jLabel);
         draw.putToFront(layeredPane);
 
         button.addActionListener(new ActionListener() {  //Button onClickListener
@@ -142,6 +164,9 @@ public class mainActivity extends JPanel{
             }
         });
 
+        threads.executeBringToFront(layeredPane);
+
+        add(draw.paintPanel);
         add(jLabel);
         add(jComboBox1);
         add(button);
@@ -274,7 +299,7 @@ public class mainActivity extends JPanel{
         public static void circle(JLayeredPane lp){
             System.out.println("drawCircle");
             lp.add(paintPanel,5,0);
-            //frame.getContentPane().add(paintPanel, BorderLayout.CENTER);
+            //lp.getContentPane().add(paintPanel, BorderLayout.CENTER);
         }
         public static void newDimension(int width, int height){
             wid = width;
@@ -296,15 +321,16 @@ public class mainActivity extends JPanel{
         public static void putToBack(JLayeredPane lp){
             lp.moveToBack(paintPanel);
         }
-        static final JPanel paintPanel = new JPanel(){
-        @Override
+        public static JPanel paintPanel = new JPanel() {
+            @Override
             public void paintComponent(Graphics g) {
                 Graphics2D g2ds = (Graphics2D) g;
-                Ellipse2D.Double circle = new Ellipse2D.Double(mouseX - 120, mouseY - 60, wid, hei);
+                Ellipse2D.Double circle = new Ellipse2D.Double(mouseX + xOffset, mouseY + yOffset, wid, hei);
                 paintPanel.setOpaque(opaque);
                 g2ds.setColor(Color.YELLOW);
                 g2ds.fill(circle);
                 g2ds.draw(circle);
+                System.out.println("circleDrawed");
             }
         };
     }
