@@ -10,9 +10,9 @@ public class helloWorld extends JComponent {
     private static void createAndShowGUI() {
         //Create and set up the window.
         JFrame frame = new JFrame("HelloWorldSwing");
-        JComponent newContentPane = new helloWorld();
+        helloWorld newContentPane = new helloWorld();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        newContentPane.setOpaque(true);
+        newContentPane.setOpaque(false);
         frame.setContentPane(newContentPane);
 
         //Display the window.
@@ -25,28 +25,29 @@ public class helloWorld extends JComponent {
     public helloWorld() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setBounds(0,0,200,200);
-        layeredPane.setPreferredSize(new Dimension(300, 310));
-
+        //setLayout(new LayeredPaneManager(layeredPane));
+        setPreferredSize(new Dimension(500,500));
+        layeredPane.setOpaque(false);
+        //layeredPane.setBounds(0,0,200,200);
+        //layeredPane.setPreferredSize(new Dimension(300, 310));
         //Add the ubiquitous "Hello World" label.
         JButton button = new JButton("Hello World");
-        button.setBounds(0,0,10,10);
+        button.setBounds(100,100,100,100);
+        button.setBackground(Color.GREEN);
         button.setOpaque(true);
-        layeredPane.add(button,  1, 0);
+       // layeredPane.add(button,  1, 0);
 
         JLabel label2 = new JLabel("Hello Earth");
-        label2.setBounds(0,0,10,10);
+        label2.setBounds(100,100,50,30);
+        label2.setBackground(Color.RED);
         label2.setOpaque(true);
-        layeredPane.add(label2, 2, 0);
+        //layeredPane.add(label2, 2, 0);
 
-        //layeredPane.setBorder(BorderFactory.createTitledBorder("World on Top"));
-        layeredPane.add(paintPanel,3,0);
-        add(paintPanel);
-        add(button);
-        //add(label2);
-        add(Box.createRigidArea(new Dimension(0, 10)));
-        layeredPane.moveToFront(paintPanel);
-        layeredPane.setLayer(paintPanel,1,1);
+        layeredPane.setBorder(BorderFactory.createTitledBorder("World on Top"));
+        paintPanel.setBounds(300,300,100,100);
+        layeredPane.add(paintPanel,new Integer(3),0);
+        layeredPane.add(button,new Integer(1),0);
+        layeredPane.add(label2,new Integer(2),0);
         add(layeredPane);
         button.addActionListener(new ActionListener() {  //Button onClickListener
             @Override
@@ -55,11 +56,11 @@ public class helloWorld extends JComponent {
             }
         });
     }
-    public static JPanel paintPanel = new JPanel() {
+    public JPanel paintPanel = new JPanel() {
         @Override
         public void paintComponent(Graphics g) {
             Graphics2D g2ds = (Graphics2D) g;
-            Ellipse2D.Double circle = new Ellipse2D.Double(100,100,10,10);
+            Ellipse2D.Double circle = new Ellipse2D.Double(0,0,100,100);
             paintPanel.setOpaque(true);
             g2ds.setColor(Color.BLUE);
             g2ds.fill(circle);
@@ -76,4 +77,5 @@ public class helloWorld extends JComponent {
             }
         });
     }
+
 }

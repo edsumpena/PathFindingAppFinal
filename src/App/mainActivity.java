@@ -1,48 +1,31 @@
 package App;
 
-import PreseasonTest.helloWorld;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-import sun.rmi.runtime.Log;
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.font.FontRenderContext;
-import java.awt.font.GlyphVector;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
-import java.awt.image.ImageObserver;
-import java.awt.image.RenderedImage;
-import java.awt.image.renderable.RenderableImage;
 import java.io.File;
 import java.io.IOException;
-import java.text.AttributedCharacterIterator;
-import java.util.Map;
 
-import static sun.plugin.javascript.navig.JSType.Embed;
 public class mainActivity extends JPanel{
-    private JComboBox comboBox1;
     static boolean line = false;
     static boolean curve = false;
     static boolean select = true;
-    static double mouseX = 0;
-    static double mouseY = 0;
+    static int mouseX = 0;
+    static int mouseY = 0;
     static boolean nPressed = false;
     static boolean gPressed = false;
     static boolean alreadyAdded = false;
     static boolean mouseExited = true;
     static boolean mouseClicked = false;
-    static int xOffset = -40;
-    static int yOffset = -57;
-    //private static JLabel mimage;
+    static int xOffset = -15;
+    static int yOffset = -40;
 
 
     private static void createAndShowGUI() throws IOException {
-        //Create and set up the window.
-        JFrame frame = new JFrame("HelloWorldSwing");
+        JFrame frame = new JFrame("HelloWorldSwing");  //Create and set up the window.
         JComponent newContentPane = new mainActivity();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -56,9 +39,9 @@ public class mainActivity extends JPanel{
         frame.setVisible(true);
         frame.requestFocusInWindow();
 
-        threads.executeFocus(frame);
+        threads.executeFocus(frame);  //See "threads" class
     }
-    public static class threads extends Thread{
+    public static class threads extends Thread{  //If mouse clicks away from JTextbox, it will unfocus JTextbox (for keyPressedListener)
         public static void executeFocus(JFrame frame){
             boolean unstoppable = true;
             Thread one = new Thread() {
@@ -77,26 +60,11 @@ public class mainActivity extends JPanel{
             };
             one.start();
         }
-        public static void executeBringToFront(JLayeredPane lp){
-            boolean unstoppable = true;
-            Thread one = new Thread(){
-                public void run(){
-                    while(unstoppable){
-                        draw.putToFront(lp);
-                        try {
-                            Thread.sleep(100);
-                        } catch(Exception e){
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            };
-        }
     }
     public mainActivity() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setPreferredSize(new Dimension(900, 900));
+        layeredPane.setPreferredSize(new Dimension(1500, 900));
         BufferedImage image = null;
         try {
             image = ImageIO.read(new File("res/images/ftcOldField.jpg"));  //Import FTC Field Image
@@ -108,43 +76,49 @@ public class mainActivity extends JPanel{
         ImageIcon imageIcon = new ImageIcon(newImage);
         JLabel jLabel = new JLabel();
         jLabel.setIcon(imageIcon);
-        jLabel.setLayout(new GridLayout(1, 2));
-        layeredPane.add(jLabel,1,0);
-        //frame.getContentPane().add(jLabel, BorderLayout.CENTER);
+        jLabel.setBounds(0,0,900,900);
 
+        JLabel l1 = new JLabel("Drive Options:");  //Labels
+        l1.setFont(l1.getFont().deriveFont(15f));
+        l1.setBounds(1000,50,200,30);
+        l1.setFocusable(false);
 
-        JComboBox jComboBox1 = new JComboBox();  //Dropdown box creator
-        jComboBox1.addItem("[Select]");  //Dropdown options
+        JLabel l2 = new JLabel("Motor Options:");
+        l2.setFont(l1.getFont().deriveFont(15f));
+        l2.setBounds(1250,50,200,30);
+        l2.setFocusable(false);
+
+        JComboBox jComboBox1 = new JComboBox();  //Dropdown box creator for Drive Options
+        jComboBox1.addItem("[Select]");  //Dropdown options for Drive Options
         jComboBox1.addItem("Line");
         jComboBox1.addItem("Curve");
         jComboBox1.setFont(jComboBox1.getFont().deriveFont(15f));
-        //Object cmboitem = jComboBox1.getSelectedItem();
-        //System.out.println(cmboitem);
         jComboBox1.addItemListener(new ItemChangeListener());
-        jComboBox1.setPreferredSize(new Dimension(200, 30));
+        jComboBox1.setBounds(950,100,200,30);
         jComboBox1.setFocusable(false);
-        layeredPane.add(jComboBox1,2,0);
-        //frame.getContentPane().add(jComboBox1, BorderLayout.BEFORE_FIRST_LINE);
+
+        JComboBox jComboBox2 = new JComboBox();  //Dropdown box creator for Motor Options
+        jComboBox2.addItem("[Select]");  //Dropdown options for Motor Options
+        jComboBox2.setFont(jComboBox1.getFont().deriveFont(15f));
+        jComboBox2.addItemListener(new ItemChangeListener2());
+        jComboBox2.setBounds(1200,100,200,30);
+        jComboBox2.setFocusable(false);
 
         JButton button = new JButton("Get Path Data");  //"Get Path Data" button
-        button.setPreferredSize(new Dimension(115, 20));
+        button.setBounds(1075,200,200,50);
         button.setFocusable(false);
 
-        layeredPane.add(button, 3,0);
-        //frame.getContentPane().add(button, BorderLayout.WEST);
-
         JTextField tf = new JTextField();  //Output Text Field
-        tf.setPreferredSize(new Dimension(100, 30));
+        tf.setBounds(950,325,500,30);
         tf.setFont(tf.getFont().deriveFont(18f));
         tf.setFocusable(true);
-        layeredPane.add(button,4,0);
-        //frame.getContentPane().add(tf, BorderLayout.SOUTH);
 
         layeredPane.moveToBack(jLabel);
 
-        draw.backgroundTransparent(true);
-        draw.circle(layeredPane);
-        draw.putToFront(layeredPane);
+        draw.backgroundTransparent(true);  //Change settings of the Dot (circle)
+        draw.setColor("Yellow");
+        draw.newDimension(0,0,0,0);
+        draw.visibility(false);
 
         button.addActionListener(new ActionListener() {  //Button onClickListener
             @Override
@@ -159,20 +133,20 @@ public class mainActivity extends JPanel{
             }
         });
 
-        threads.executeBringToFront(layeredPane);
-
-        add(draw.paintPanel);
-        add(jLabel);
-        add(jComboBox1);
-        add(button);
-        add(tf);
-        layeredPane.moveToBack(jLabel);
+        layeredPane.add(l1, new Integer(8),0);  //Add all components to layeredPane and set overlap sequence
+        layeredPane.add(l2, new Integer(7),0);
+        layeredPane.add(jComboBox2, new Integer(6),0);
+        layeredPane.add(draw.paintPanel,new Integer(5),0);
+        layeredPane.add(jLabel, new Integer(4),0);
+        layeredPane.add(jComboBox1, new Integer(3),0);
+        layeredPane.add(button, new Integer(2), 0);
+        layeredPane.add(tf, new Integer(1), 0);
         add(layeredPane);
     }
 
     static class ItemChangeListener implements ItemListener {
         @Override
-        public void itemStateChanged(ItemEvent event) {  //Which dropdown option is selected?
+        public void itemStateChanged(ItemEvent event) {  //Which dropdown option is selected for Drive Options?
             if (event.getStateChange() == ItemEvent.SELECTED) {
                 Object item = event.getItem();
                 if (String.valueOf(item).equals("Line")) {
@@ -194,15 +168,26 @@ public class mainActivity extends JPanel{
             }
         }
     }
+    static class ItemChangeListener2 implements ItemListener {
+        @Override
+        public void itemStateChanged(ItemEvent event) {  //Which dropdown option is selected for Motor Options?
+            if (event.getStateChange() == ItemEvent.SELECTED) {
+                Object item = event.getItem();
+                if (String.valueOf(item).equals("[Select")) {
+                    System.out.println("Line");
+                } else if (String.valueOf(item).equals("")) {
+                    System.out.println("");
+                } else if (String.valueOf(item).equals(".")) {
+                    System.out.println("");
+                }
+            }
+        }
+    }
 
     public static class mouse implements MouseMotionListener, MouseListener {   //Detect mouse location on picture (to draw points)
         public static void initListener(JFrame lp) {
             lp.addMouseMotionListener(new mouse());
             lp.addMouseListener(new mouse());
-        }
-        public static void resetFocus(JTextField tf){
-            tf.setFocusable(false);
-            tf.setFocusable(true);
         }
         public void mouseClicked(MouseEvent evt){
 
@@ -238,16 +223,19 @@ public class mainActivity extends JPanel{
         @Override
         public void keyPressed(KeyEvent e)  //Key is pressed
         {
-            if(e.getKeyCode()==KeyEvent.VK_N) {
+            if(e.getKeyCode()==KeyEvent.VK_N) {  //If N is pressed
                 System.out.println("'N'");
                 nPressed = true;
                 gPressed = false;
-                if(!mouseExited){
-                    draw.newDimension(15,15);
+                if(!mouseExited && mouseX+xOffset <= 875  && mouseY+yOffset <= 875 &&  //Checks if mouse is in the screen & in field image
+                mouseX+xOffset >= 10 && mouseY+yOffset >= 10){
+                    draw.visibility(true);
+                    draw.setColor("yellow");
+                    draw.newDimension(mouseX+xOffset,mouseY+yOffset,15,15);
                     draw.backgroundTransparent(false);
                     draw.redraw();
                 }
-            } else if(e.getKeyCode()==KeyEvent.VK_G){
+            } else if(e.getKeyCode()==KeyEvent.VK_G){  //If G is pressed
                 System.out.println("'G'");
                 gPressed = true;
                 nPressed = false;
@@ -256,11 +244,11 @@ public class mainActivity extends JPanel{
         @Override
         public void keyReleased(KeyEvent e)  //Key is released
         {
-            if(e.getKeyCode()==KeyEvent.VK_N) {
+            if(e.getKeyCode()==KeyEvent.VK_N) {  //If N is released
                 nPressed = false;
                 alreadyAdded = false;
                 gPressed = false;
-            } else if(e.getKeyCode()==KeyEvent.VK_G){
+            } else if(e.getKeyCode()==KeyEvent.VK_G){  //If G is released
                 gPressed = false;
                 alreadyAdded = false;
                 nPressed = false;
@@ -290,52 +278,226 @@ public class mainActivity extends JPanel{
     public static class draw extends JPanel{  //Draw a dot
         static int wid = 0;
         static int hei = 0;
+        static boolean white = false;       //Change color of dot (Not efficient at all LOL)
+        static boolean lightgray = false;
+        static boolean gray = false;
+        static boolean darkgray = false;
+        static boolean black = false;
+        static boolean red = false;
+        static boolean pink = false;
+        static boolean orange = false;
+        static boolean yellow = false;
+        static boolean magenta = false;
+        static boolean cyan = false;
         static boolean opaque = false;
-        public static void circle(JLayeredPane lp){
-            System.out.println("drawCircle");
-            lp.add(paintPanel,5,0);
-            //lp.getContentPane().add(paintPanel, BorderLayout.CENTER);
-        }
-        public static void newDimension(int width, int height){
+        public static void newDimension(int x,int y,int width, int height){  //Change dimensions of circle
+            paintPanel.setBounds(x,y,width,height);
             wid = width;
             hei = height;
         }
-        public static void backgroundTransparent(boolean transparent){
+        public static void visibility(boolean visible){  //Change visibility of circle
+            paintPanel.setVisible(visible);
+        }
+        public static void backgroundTransparent(boolean transparent){  //Change Opaque value
             if(transparent){
                 opaque = false;
             } else {
                 opaque = true;
             }
         }
-        public static void redraw(){
+        public static void redraw(){  //Repaints the dot
             paintPanel.repaint();
         }
-        public static void putToFront(JLayeredPane lp){
+        public static void putToFront(JLayeredPane lp){  //Move dot to front of layeredPane
             lp.moveToFront(paintPanel);
         }
-        public static void putToBack(JLayeredPane lp){
+        public static void putToBack(JLayeredPane lp){  //Move dot to back of layeredPane
             lp.moveToBack(paintPanel);
         }
-        public static JPanel paintPanel = new JPanel() {
+        public static void setColor(String color){  //Set color (Once again not very efficient)
+            if(color.equalsIgnoreCase("white")){
+                white = true;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("light gray")){
+                lightgray = true;
+                white = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("gray")){
+                gray = true;
+                white = false;
+                lightgray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("dark gray")){
+                darkgray = true;
+                white = false;
+                lightgray = false;
+                gray = false;
+                black = false;
+                red = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("black")){
+                black = true;
+                white = false;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                red = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("red")){
+                red = true;
+                white = false;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("pink")){
+                pink = true;
+                white = false;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("orange")){
+                orange = true;
+                white = false;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                pink = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("yellow")){
+                yellow = true;
+                white = false;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                pink = false;
+                orange = false;
+                magenta = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("magenta")){
+                magenta = true;
+                white = false;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                cyan = false;
+            } else if(color.equalsIgnoreCase("cyan")){
+                cyan = true;
+                white = false;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+            } else {
+                System.out.println("Unknown/Unregistered Color");
+            }
+        }
+        public static JPanel paintPanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
             @Override
-            public void paintComponent(Graphics g) {
+            public void paintComponent(Graphics g) {  //Draws circle over JPanel
+                super.paintComponent(g);
                 Graphics2D g2ds = (Graphics2D) g;
-                Ellipse2D.Double circle = new Ellipse2D.Double(mouseX + xOffset, mouseY + yOffset, wid, hei);
+                Ellipse2D.Double circle = new Ellipse2D.Double(0, 0, wid, hei);
                 paintPanel.setOpaque(opaque);
-                g2ds.setColor(Color.YELLOW);
+                if(white){  //Change color of circle
+                    g2ds.setColor(Color.WHITE);
+                } else if(lightgray){
+                    g2ds.setColor(Color.LIGHT_GRAY);
+                } else if(gray){
+                    g2ds.setColor(Color.GRAY);
+                } else if(darkgray){
+                    g2ds.setColor(Color.DARK_GRAY);
+                } else if(black){
+                    g2ds.setColor(Color.BLACK);
+                } else if(red){
+                    g2ds.setColor(Color.RED);
+                } else if(pink){
+                    g2ds.setColor(Color.PINK);
+                } else if(orange){
+                    g2ds.setColor(Color.orange);
+                } else if(yellow){
+                    g2ds.setColor(Color.YELLOW);
+                } else if(magenta){
+                    g2ds.setColor(Color.MAGENTA);
+                } else if(cyan){
+                    g2ds.setColor(Color.CYAN);
+                } else {
+                    g2ds.setColor(Color.WHITE);
+                }
+                white = true;
+                lightgray = false;
+                gray = false;
+                darkgray = false;
+                black = false;
+                red = false;
+                pink = false;
+                orange = false;
+                yellow = false;
+                magenta = false;
+                cyan = false;
                 g2ds.fill(circle);
                 g2ds.draw(circle);
                 System.out.println("circleDrawed");
             }
         };
     }
-
-   /* @Override
-    public void paintComponent(Graphics g) {
-        Graphics2D g2 = (Graphics2D) g;
-        //Shape line = new Line2D.Double(3, 3, 303, 303);
-        Shape circle = new Ellipse2D.Double(mouseX, mouseY, 20, 20);
-        g2.setColor(Color.BLACK);
-        g2.draw(circle);
-    }*/
 }
