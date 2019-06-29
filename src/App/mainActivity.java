@@ -22,7 +22,7 @@ public class mainActivity extends JPanel {
     static boolean mouseExited = true;
     static boolean mouseClicked = false;
     static int xOffset = -15;
-    static int yOffset = -40;
+    static int yOffset = -43;
     static ArrayList<Integer> circles = new ArrayList<>();
 
     private static void createAndShowGUI() throws IOException {
@@ -62,6 +62,7 @@ public class mainActivity extends JPanel {
             };
             one.start();
         }
+
         public static void executeRepaint(JLayeredPane lp) {
             boolean unstoppable = true;
             Thread one = new Thread() {
@@ -242,8 +243,8 @@ public class mainActivity extends JPanel {
         }
 
         public void mouseMoved(MouseEvent evt) {  //Mouse is moved
-            mouseX = evt.getXOnScreen();
-            mouseY = evt.getYOnScreen();
+            mouseX = evt.getX();
+            mouseY = evt.getY();
             //System.out.println("mouseX = " + mouseX);
             //System.out.println("mouseY = " + mouseY);
         }
@@ -264,11 +265,11 @@ public class mainActivity extends JPanel {
                 System.out.println("'N'");
                 nPressed = true;
                 gPressed = false;
-                if (!mouseExited &&   //Checks if mouse is in the screen & in field image
-                        mouseX + xOffset >= 10 && mouseY + yOffset >= 10) {
+                if (!mouseExited && mouseX + xOffset <= 875 && mouseY + yOffset <= 875 && //Checks if mouse is in the screen & in field image
+                        mouseX + xOffset >= 12 && mouseY + yOffset >= 10 && !select) {
                     circles.add(mouseX);
                     circles.add(mouseY);
-                    draw.setDimension(15,15);
+                    draw.setDimension(15, 15);
                     draw.backgroundTransparent(true);
                     draw.visibility(true);
                     draw.setColor("red");
@@ -326,10 +327,11 @@ public class mainActivity extends JPanel {
         static int y = 0;
         static boolean isVisible = false;
 
-        public static void setDimension(int width, int height){
+        public static void setDimension(int width, int height) {
             wid = width;
             hei = height;
         }
+
         public static void visibility(boolean visible) {  //Change visibility of circle
             isVisible = visible;
         }
@@ -371,8 +373,9 @@ public class mainActivity extends JPanel {
                 circles.add(10);
             }
         }
+
         public static void showAllCircles(JLayeredPane lp) {
-            if(redraw){
+            if (redraw) {
                 redraw = false;
             }
             x = 0;
@@ -426,7 +429,7 @@ public class mainActivity extends JPanel {
                 };
                 System.out.println(circles.get(y) + " " + circles.get(y + 1));
                 paintPanel.setOpaque(opaque);
-                paintPanel.setBounds(circles.get(y), circles.get(y + 1), wid, hei);
+                paintPanel.setBounds(circles.get(y) + xOffset, circles.get(y + 1) + yOffset, wid, hei);
                 lp.add(paintPanel, new Integer(x + 9), 0);
                 x = x + 1;
                 y = y + 3;
