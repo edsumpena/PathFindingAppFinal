@@ -8,8 +8,9 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
-public class mainActivity extends JPanel{
+public class mainActivity extends JPanel {
     static boolean line = false;
     static boolean curve = false;
     static boolean select = true;
@@ -22,7 +23,7 @@ public class mainActivity extends JPanel{
     static boolean mouseClicked = false;
     static int xOffset = -15;
     static int yOffset = -40;
-
+    static ArrayList<Integer> circles = new ArrayList<>();
 
     private static void createAndShowGUI() throws IOException {
         JFrame frame = new JFrame("HelloWorldSwing");  //Create and set up the window.
@@ -41,17 +42,37 @@ public class mainActivity extends JPanel{
 
         threads.executeFocus(frame);  //See "threads" class
     }
-    public static class threads extends Thread{  //If mouse clicks away from JTextbox, it will unfocus JTextbox (for keyPressedListener)
-        public static void executeFocus(JFrame frame){
+
+    public static class threads extends Thread {  //If mouse clicks away from JTextbox, it will unfocus JTextbox (for keyPressedListener)
+        public static void executeFocus(JFrame frame) {
             boolean unstoppable = true;
             Thread one = new Thread() {
                 public void run() {
-                    while(unstoppable){
-                        if(mouseClicked) {
+                    while (unstoppable) {
+                        if (mouseClicked) {
                             frame.requestFocus();
                             try {
                                 Thread.sleep(100);
-                            } catch(Exception e){
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            };
+            one.start();
+        }
+        public static void executeRepaint(JLayeredPane lp) {
+            boolean unstoppable = true;
+            Thread one = new Thread() {
+                public void run() {
+                    while (unstoppable) {
+                        if (draw.redraw) {
+                            System.out.println("redraw");
+                            draw.showAllCircles(lp);
+                            try {
+                                Thread.sleep(100);
+                            } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }
@@ -61,6 +82,7 @@ public class mainActivity extends JPanel{
             one.start();
         }
     }
+
     public mainActivity() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
@@ -76,16 +98,16 @@ public class mainActivity extends JPanel{
         ImageIcon imageIcon = new ImageIcon(newImage);
         JLabel jLabel = new JLabel();
         jLabel.setIcon(imageIcon);
-        jLabel.setBounds(0,0,900,900);
+        jLabel.setBounds(0, 0, 900, 900);
 
         JLabel l1 = new JLabel("Drive Options:");  //Labels
         l1.setFont(l1.getFont().deriveFont(15f));
-        l1.setBounds(1000,50,200,30);
+        l1.setBounds(1000, 50, 200, 30);
         l1.setFocusable(false);
 
         JLabel l2 = new JLabel("Motor Options:");
         l2.setFont(l1.getFont().deriveFont(15f));
-        l2.setBounds(1250,50,200,30);
+        l2.setBounds(1250, 50, 200, 30);
         l2.setFocusable(false);
 
         JComboBox jComboBox1 = new JComboBox();  //Dropdown box creator for Drive Options
@@ -94,31 +116,26 @@ public class mainActivity extends JPanel{
         jComboBox1.addItem("Curve");
         jComboBox1.setFont(jComboBox1.getFont().deriveFont(15f));
         jComboBox1.addItemListener(new ItemChangeListener());
-        jComboBox1.setBounds(950,100,200,30);
+        jComboBox1.setBounds(950, 100, 200, 30);
         jComboBox1.setFocusable(false);
 
         JComboBox jComboBox2 = new JComboBox();  //Dropdown box creator for Motor Options
         jComboBox2.addItem("[Select]");  //Dropdown options for Motor Options
         jComboBox2.setFont(jComboBox1.getFont().deriveFont(15f));
         jComboBox2.addItemListener(new ItemChangeListener2());
-        jComboBox2.setBounds(1200,100,200,30);
+        jComboBox2.setBounds(1200, 100, 200, 30);
         jComboBox2.setFocusable(false);
 
         JButton button = new JButton("Get Path Data");  //"Get Path Data" button
-        button.setBounds(1075,200,200,50);
+        button.setBounds(1075, 200, 200, 50);
         button.setFocusable(false);
 
         JTextField tf = new JTextField();  //Output Text Field
-        tf.setBounds(950,325,500,30);
+        tf.setBounds(950, 325, 500, 30);
         tf.setFont(tf.getFont().deriveFont(18f));
         tf.setFocusable(true);
 
         layeredPane.moveToBack(jLabel);
-
-        draw.backgroundTransparent(true);  //Change settings of the Dot (circle)
-        draw.setColor("Yellow");
-        draw.newDimension(0,0,0,0);
-        draw.visibility(false);
 
         button.addActionListener(new ActionListener() {  //Button onClickListener
             @Override
@@ -133,14 +150,22 @@ public class mainActivity extends JPanel{
             }
         });
 
-        layeredPane.add(l1, new Integer(8),0);  //Add all components to layeredPane and set overlap sequence
-        layeredPane.add(l2, new Integer(7),0);
-        layeredPane.add(jComboBox2, new Integer(6),0);
-        layeredPane.add(draw.paintPanel,new Integer(5),0);
-        layeredPane.add(jLabel, new Integer(4),0);
-        layeredPane.add(jComboBox1, new Integer(3),0);
+        draw.backgroundTransparent(false);  //Change settings of the Dot (circle)
+        draw.setColor("Yellow");
+        draw.visibility(false);
+
+        layeredPane.add(l1, new Integer(8), 0);  //Add all components to layeredPane and set overlap sequence
+        layeredPane.add(l2, new Integer(7), 0);
+        layeredPane.add(jComboBox2, new Integer(6), 0);
+        layeredPane.add(jLabel, new Integer(4), 0);
+        layeredPane.add(jComboBox1, new Integer(3), 0);
         layeredPane.add(button, new Integer(2), 0);
         layeredPane.add(tf, new Integer(1), 0);
+
+        draw.showAllCircles(layeredPane);
+
+        threads.executeRepaint(layeredPane);
+        circles.clear();
         add(layeredPane);
     }
 
@@ -168,6 +193,7 @@ public class mainActivity extends JPanel{
             }
         }
     }
+
     static class ItemChangeListener2 implements ItemListener {
         @Override
         public void itemStateChanged(ItemEvent event) {  //Which dropdown option is selected for Motor Options?
@@ -189,78 +215,92 @@ public class mainActivity extends JPanel{
             lp.addMouseMotionListener(new mouse());
             lp.addMouseListener(new mouse());
         }
-        public void mouseClicked(MouseEvent evt){
+
+        public void mouseClicked(MouseEvent evt) {
 
         }
-        public void mouseEntered(MouseEvent evt){  //Mouse entered window
+
+        public void mouseEntered(MouseEvent evt) {  //Mouse entered window
             System.out.println("mouseExitedFalse");
             mouseExited = false;
         }
-        public void mouseExited(MouseEvent evt){  //Mouse exited window
+
+        public void mouseExited(MouseEvent evt) {  //Mouse exited window
             System.out.println("mouseExitedTrue");
             mouseExited = true;
         }
-        public void mousePressed(MouseEvent evt){
+
+        public void mousePressed(MouseEvent evt) {
             mouseClicked = true;
         }
-        public void mouseReleased(MouseEvent evt){
+
+        public void mouseReleased(MouseEvent evt) {
             mouseClicked = false;
         }
-        public void mouseDragged(MouseEvent evt) {}
-        public void mouseMoved(MouseEvent evt){  //Mouse is moved
+
+        public void mouseDragged(MouseEvent evt) {
+        }
+
+        public void mouseMoved(MouseEvent evt) {  //Mouse is moved
             mouseX = evt.getXOnScreen();
             mouseY = evt.getYOnScreen();
             //System.out.println("mouseX = " + mouseX);
             //System.out.println("mouseY = " + mouseY);
         }
-        public void actionPerformed(ActionEvent e) {}
+
+        public void actionPerformed(ActionEvent e) {
+        }
     }
 
-    public static class key implements KeyListener{  //Keyboard listener (which key is pressed?)
-        public static void initListener(JFrame lp){
+    public static class key implements KeyListener {  //Keyboard listener (which key is pressed?)
+        public static void initListener(JFrame lp) {
             lp.addKeyListener(new key());
         }
+
         @Override
         public void keyPressed(KeyEvent e)  //Key is pressed
         {
-            if(e.getKeyCode()==KeyEvent.VK_N) {  //If N is pressed
+            if (e.getKeyCode() == KeyEvent.VK_N) {  //If N is pressed
                 System.out.println("'N'");
                 nPressed = true;
                 gPressed = false;
-                if(!mouseExited && mouseX+xOffset <= 875  && mouseY+yOffset <= 875 &&  //Checks if mouse is in the screen & in field image
-                mouseX+xOffset >= 10 && mouseY+yOffset >= 10){
+                if (!mouseExited &&   //Checks if mouse is in the screen & in field image
+                        mouseX + xOffset >= 10 && mouseY + yOffset >= 10) {
+                    circles.add(mouseX);
+                    circles.add(mouseY);
+                    draw.setDimension(15,15);
+                    draw.backgroundTransparent(true);
                     draw.visibility(true);
-                    draw.setColor("yellow");
-                    draw.newDimension(mouseX+xOffset,mouseY+yOffset,15,15);
-                    draw.backgroundTransparent(false);
+                    draw.setColor("red");
                     draw.redraw();
                 }
-            } else if(e.getKeyCode()==KeyEvent.VK_G){  //If G is pressed
+            } else if (e.getKeyCode() == KeyEvent.VK_G) {  //If G is pressed
                 System.out.println("'G'");
                 gPressed = true;
                 nPressed = false;
             }
         }
+
         @Override
         public void keyReleased(KeyEvent e)  //Key is released
         {
-            if(e.getKeyCode()==KeyEvent.VK_N) {  //If N is released
+            if (e.getKeyCode() == KeyEvent.VK_N) {  //If N is released
                 nPressed = false;
                 alreadyAdded = false;
                 gPressed = false;
-            } else if(e.getKeyCode()==KeyEvent.VK_G){  //If G is released
+            } else if (e.getKeyCode() == KeyEvent.VK_G) {  //If G is released
                 gPressed = false;
                 alreadyAdded = false;
                 nPressed = false;
             }
         }
+
         @Override
-        public void keyTyped(KeyEvent e)
-        {
+        public void keyTyped(KeyEvent e) {
         }
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         javax.swing.SwingUtilities.invokeLater(new Runnable() {  //Creating and showing this application's GUI
             public void run() {
                 try {
@@ -275,229 +315,122 @@ public class mainActivity extends JPanel{
     private void createUIComponents() {
         // TODO: place custom component creation code here
     }
-    public static class draw extends JPanel{  //Draw a dot
+
+    public static class draw extends JPanel {  //Draw a dot
         static int wid = 0;
         static int hei = 0;
-        static boolean white = false;       //Change color of dot (Not efficient at all LOL)
-        static boolean lightgray = false;
-        static boolean gray = false;
-        static boolean darkgray = false;
-        static boolean black = false;
-        static boolean red = false;
-        static boolean pink = false;
-        static boolean orange = false;
-        static boolean yellow = false;
-        static boolean magenta = false;
-        static boolean cyan = false;
-        static boolean opaque = false;
-        public static void newDimension(int x,int y,int width, int height){  //Change dimensions of circle
-            paintPanel.setBounds(x,y,width,height);
+        static boolean opaque = true;
+        public static JPanel paintPanel;
+        static boolean redraw = false;
+        static int x = 0;
+        static int y = 0;
+        static boolean isVisible = false;
+
+        public static void setDimension(int width, int height){
             wid = width;
             hei = height;
         }
-        public static void visibility(boolean visible){  //Change visibility of circle
-            paintPanel.setVisible(visible);
+        public static void visibility(boolean visible) {  //Change visibility of circle
+            isVisible = visible;
         }
-        public static void backgroundTransparent(boolean transparent){  //Change Opaque value
-            if(transparent){
+
+        public static void backgroundTransparent(boolean transparent) {  //Change Opaque value
+            if (transparent) {
                 opaque = false;
             } else {
                 opaque = true;
             }
         }
-        public static void redraw(){  //Repaints the dot
-            paintPanel.repaint();
+
+        public static void redraw() {  //Repaints the dot
+            redraw = true;
         }
-        public static void putToFront(JLayeredPane lp){  //Move dot to front of layeredPane
-            lp.moveToFront(paintPanel);
-        }
-        public static void putToBack(JLayeredPane lp){  //Move dot to back of layeredPane
-            lp.moveToBack(paintPanel);
-        }
-        public static void setColor(String color){  //Set color (Once again not very efficient)
-            if(color.equalsIgnoreCase("white")){
-                white = true;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("light gray")){
-                lightgray = true;
-                white = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("gray")){
-                gray = true;
-                white = false;
-                lightgray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("dark gray")){
-                darkgray = true;
-                white = false;
-                lightgray = false;
-                gray = false;
-                black = false;
-                red = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("black")){
-                black = true;
-                white = false;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                red = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("red")){
-                red = true;
-                white = false;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("pink")){
-                pink = true;
-                white = false;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("orange")){
-                orange = true;
-                white = false;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                pink = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("yellow")){
-                yellow = true;
-                white = false;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                pink = false;
-                orange = false;
-                magenta = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("magenta")){
-                magenta = true;
-                white = false;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                cyan = false;
-            } else if(color.equalsIgnoreCase("cyan")){
-                cyan = true;
-                white = false;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-            } else {
-                System.out.println("Unknown/Unregistered Color");
+
+        public static void setColor(String color) {  //Set color (Once again not very efficient)
+            if (color.equalsIgnoreCase("white")) {
+                circles.add(0);
+            } else if (color.equalsIgnoreCase("light gray")) {
+                circles.add(1);
+            } else if (color.equalsIgnoreCase("gray")) {
+                circles.add(2);
+            } else if (color.equalsIgnoreCase("dark gray")) {
+                circles.add(3);
+            } else if (color.equalsIgnoreCase("black")) {
+                circles.add(4);
+            } else if (color.equalsIgnoreCase("red")) {
+                circles.add(5);
+            } else if (color.equalsIgnoreCase("pink")) {
+                circles.add(6);
+            } else if (color.equalsIgnoreCase("orange")) {
+                circles.add(7);
+            } else if (color.equalsIgnoreCase("yellow")) {
+                circles.add(8);
+            } else if (color.equalsIgnoreCase("magenta")) {
+                circles.add(9);
+            } else if (color.equalsIgnoreCase("cyan")) {
+                circles.add(10);
             }
         }
-        public static JPanel paintPanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
-            @Override
-            public void paintComponent(Graphics g) {  //Draws circle over JPanel
-                super.paintComponent(g);
-                Graphics2D g2ds = (Graphics2D) g;
-                Ellipse2D.Double circle = new Ellipse2D.Double(0, 0, wid, hei);
+        public static void showAllCircles(JLayeredPane lp) {
+            if(redraw){
+                redraw = false;
+            }
+            x = 0;
+            y = 0;
+            while (x < circles.size() / 3 && isVisible) {
+                paintPanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
+                    @Override
+                    public void paintComponent(Graphics g) {  //Draws circle over JPanel
+                        super.paintComponent(g);
+                        paintPanel.setOpaque(opaque);
+                        Graphics2D g2ds = (Graphics2D) g;
+                        Ellipse2D.Double circle = new Ellipse2D.Double(0, 0, wid, hei);
+                        switch (circles.get(circles.size() - 1)) {
+                            case (0):
+                                g2ds.setColor(Color.WHITE);
+                                break;
+                            case (1):
+                                g2ds.setColor(Color.LIGHT_GRAY);
+                                break;
+                            case (2):
+                                g2ds.setColor(Color.GRAY);
+                                break;
+                            case (3):
+                                g2ds.setColor(Color.DARK_GRAY);
+                                break;
+                            case (4):
+                                g2ds.setColor(Color.BLACK);
+                                break;
+                            case (5):
+                                g2ds.setColor(Color.RED);
+                                break;
+                            case (6):
+                                g2ds.setColor(Color.PINK);
+                                break;
+                            case (7):
+                                g2ds.setColor(Color.ORANGE);
+                                break;
+                            case (8):
+                                g2ds.setColor(Color.YELLOW);
+                                break;
+                            case (9):
+                                g2ds.setColor(Color.MAGENTA);
+                                break;
+                            case (10):
+                                g2ds.setColor(Color.CYAN);
+                                break;
+                        }
+                        g2ds.fill(circle);
+                        g2ds.draw(circle);
+                    }
+                };
+                System.out.println(circles.get(y) + " " + circles.get(y + 1));
                 paintPanel.setOpaque(opaque);
-                if(white){  //Change color of circle
-                    g2ds.setColor(Color.WHITE);
-                } else if(lightgray){
-                    g2ds.setColor(Color.LIGHT_GRAY);
-                } else if(gray){
-                    g2ds.setColor(Color.GRAY);
-                } else if(darkgray){
-                    g2ds.setColor(Color.DARK_GRAY);
-                } else if(black){
-                    g2ds.setColor(Color.BLACK);
-                } else if(red){
-                    g2ds.setColor(Color.RED);
-                } else if(pink){
-                    g2ds.setColor(Color.PINK);
-                } else if(orange){
-                    g2ds.setColor(Color.orange);
-                } else if(yellow){
-                    g2ds.setColor(Color.YELLOW);
-                } else if(magenta){
-                    g2ds.setColor(Color.MAGENTA);
-                } else if(cyan){
-                    g2ds.setColor(Color.CYAN);
-                } else {
-                    g2ds.setColor(Color.WHITE);
-                }
-                white = true;
-                lightgray = false;
-                gray = false;
-                darkgray = false;
-                black = false;
-                red = false;
-                pink = false;
-                orange = false;
-                yellow = false;
-                magenta = false;
-                cyan = false;
-                g2ds.fill(circle);
-                g2ds.draw(circle);
-                System.out.println("circleDrawed");
+                paintPanel.setBounds(circles.get(y), circles.get(y + 1), wid, hei);
+                lp.add(paintPanel, new Integer(x + 9), 0);
+                x = x + 1;
+                y = y + 3;
             }
-        };
+        }
     }
 }

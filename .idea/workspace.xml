@@ -17,15 +17,16 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/PreseasonTest/helloWorld.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="158">
-              <caret line="46" column="34" selection-start-line="46" selection-start-column="34" selection-end-line="46" selection-end-column="34" />
+            <state relative-caret-position="540">
+              <caret line="83" column="35" selection-start-line="83" selection-start-column="35" selection-end-line="83" selection-end-column="35" />
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="e#2044#2045#0" expanded="true" />
-                <element signature="e#1984#2393#0" expanded="true" />
-                <element signature="e#2392#2393#0" expanded="true" />
-                <element signature="e#2648#2649#0" expanded="true" />
-                <element signature="e#2698#2699#0" expanded="true" />
+                <element signature="e#2367#2368#0" expanded="true" />
+                <element signature="e#2419#2420#0" expanded="true" />
+                <element signature="e#2651#3147#0" expanded="true" />
+                <element signature="e#3146#3147#0" expanded="true" />
+                <element signature="e#3386#3387#0" expanded="true" />
+                <element signature="e#3436#3437#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -34,8 +35,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/AppData/Local/Temp/Rar$DRa15784.22551/components-LayeredPaneDemoProject/src/components/LayeredPaneDemo.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="132" column="25" lean-forward="true" selection-start-line="132" selection-start-column="25" selection-end-line="132" selection-end-column="25" />
+            <state relative-caret-position="-19">
+              <caret line="132" column="25" selection-start-line="132" selection-start-column="25" selection-end-line="132" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -43,38 +44,17 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/App/mainActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1122">
-              <caret line="66" column="58" selection-start-line="66" selection-start-column="58" selection-end-line="66" selection-end-column="58" />
+            <state relative-caret-position="191">
+              <caret line="271" column="51" selection-start-line="271" selection-start-column="51" selection-end-line="271" selection-end-column="51" />
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="e#4211#4747#0" expanded="true" />
-                <element signature="e#4746#4747#0" expanded="true" />
-                <element signature="e#8204#8205#0" expanded="true" />
-                <element signature="e#8247#8248#0" expanded="true" />
-                <element signature="e#8298#8299#0" expanded="true" />
-                <element signature="e#8342#8343#0" expanded="true" />
-                <element signature="e#8874#8875#0" expanded="true" />
-                <element signature="e#8926#8927#0" expanded="true" />
-                <element signature="e#10981#10982#0" expanded="true" />
-                <element signature="e#11014#11015#0" expanded="true" />
-                <element signature="e#11182#11183#0" expanded="true" />
-                <element signature="e#11226#11227#0" expanded="true" />
-                <element signature="e#11395#11396#0" expanded="true" />
-                <element signature="e#11445#11446#0" expanded="true" />
-                <element signature="e#11500#11501#0" expanded="true" />
+                <element signature="e#11486#11487#0" expanded="true" />
                 <element signature="e#11549#11550#0" expanded="true" />
-                <element signature="e#17576#18844#0" expanded="true" />
-                <element signature="e#18843#18844#0" expanded="true" />
+                <element signature="e#11881#11882#0" expanded="true" />
+                <element signature="e#11940#11941#0" expanded="true" />
+                <element signature="e#13747#15926#0" expanded="true" />
+                <element signature="e#15925#15926#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="jar://C:/Program Files (x86)/Java/jdk1.8.0_181/src.zip!/java/awt/Color.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="760">
-              <caret line="158" column="30" selection-start-line="158" selection-start-column="30" selection-end-line="158" selection-end-column="30" />
             </state>
           </provider>
         </entry>
@@ -91,6 +71,7 @@
   <component name="FindInProjectRecents">
     <findStrings>
       <find>mouseExited</find>
+      <find>opaque</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -100,9 +81,9 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/App/mainActivity.form" />
         <option value="$USER_HOME$/AppData/Local/Temp/Rar$DRa15784.22551/components-LayeredPaneDemoProject/src/components/LayeredPaneDemo.java" />
         <option value="$PROJECT_DIR$/src/PreseasonTest/LayeredPaneManager.java" />
+        <option value="$PROJECT_DIR$/src/App/mainActivity.form" />
         <option value="$PROJECT_DIR$/src/PreseasonTest/helloWorld.java" />
         <option value="$PROJECT_DIR$/src/App/mainActivity.java" />
       </list>
@@ -118,6 +99,8 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -157,15 +140,13 @@
           <select />
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="C:/Program Files/Git/git-bash.exe" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -217,12 +198,14 @@
       <option name="presentableId" value="Default" />
       <updated>1561341651915</updated>
       <workItem from="1561341655048" duration="36601000" />
-      <workItem from="1561447023668" duration="43733000" />
+      <workItem from="1561447023668" duration="45703000" />
+      <workItem from="1561785787028" duration="8907000" />
+      <workItem from="1561809848933" duration="6108000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="80334000" />
+    <option name="totallyTimeSpent" value="97319000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -234,10 +217,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-7" y="-7" width="1550" height="838" extended-state="7" />
+    <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.25302014" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.25973153" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
@@ -327,9 +310,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/App/mainActivity.form">
-      <provider selected="true" editor-type-id="ui-designer" />
-    </entry>
     <entry file="jar://C:/Program Files (x86)/Java/jdk1.8.0_181/src.zip!/java/awt/Component.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="389">
@@ -337,81 +317,53 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/PreseasonTest/LayoutManager.java" />
+    <entry file="file://$PROJECT_DIR$/src/PreseasonTest/LayeredPaneManager.java" />
+    <entry file="file://$PROJECT_DIR$/src/App/mainActivity.form">
+      <provider selected="true" editor-type-id="ui-designer" />
+    </entry>
+    <entry file="jar://C:/Program Files (x86)/Java/jdk1.8.0_181/src.zip!/java/awt/Color.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="389">
+          <caret line="158" column="30" selection-start-line="158" selection-start-column="30" selection-end-line="158" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$USER_HOME$/AppData/Local/Temp/Rar$DRa15784.22551/components-LayeredPaneDemoProject/src/components/LayeredPaneDemo.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="132" column="25" lean-forward="true" selection-start-line="132" selection-start-column="25" selection-end-line="132" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/PreseasonTest/LayoutManager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="2" column="26" selection-start-line="2" selection-start-column="26" selection-end-line="2" selection-end-column="26" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/PreseasonTest/LayeredPaneManager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="20" column="38" selection-start-line="20" selection-start-column="38" selection-end-line="20" selection-end-column="38" />
-          <folding>
-            <element signature="e#249#250#0" expanded="true" />
-            <element signature="e#285#286#0" expanded="true" />
-            <element signature="e#719#720#0" expanded="true" />
-            <element signature="e#769#770#0" expanded="true" />
-            <element signature="e#851#852#0" expanded="true" />
-            <element signature="e#887#888#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="-19">
+          <caret line="132" column="25" selection-start-line="132" selection-start-column="25" selection-end-line="132" selection-end-column="25" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/PreseasonTest/helloWorld.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="158">
-          <caret line="46" column="34" selection-start-line="46" selection-start-column="34" selection-end-line="46" selection-end-column="34" />
+        <state relative-caret-position="540">
+          <caret line="83" column="35" selection-start-line="83" selection-start-column="35" selection-end-line="83" selection-end-column="35" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#2044#2045#0" expanded="true" />
-            <element signature="e#1984#2393#0" expanded="true" />
-            <element signature="e#2392#2393#0" expanded="true" />
-            <element signature="e#2648#2649#0" expanded="true" />
-            <element signature="e#2698#2699#0" expanded="true" />
+            <element signature="e#2367#2368#0" expanded="true" />
+            <element signature="e#2419#2420#0" expanded="true" />
+            <element signature="e#2651#3147#0" expanded="true" />
+            <element signature="e#3146#3147#0" expanded="true" />
+            <element signature="e#3386#3387#0" expanded="true" />
+            <element signature="e#3436#3437#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://C:/Program Files (x86)/Java/jdk1.8.0_181/src.zip!/java/awt/Color.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="760">
-          <caret line="158" column="30" selection-start-line="158" selection-start-column="30" selection-end-line="158" selection-end-column="30" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/App/mainActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1122">
-          <caret line="66" column="58" selection-start-line="66" selection-start-column="58" selection-end-line="66" selection-end-column="58" />
+        <state relative-caret-position="191">
+          <caret line="271" column="51" selection-start-line="271" selection-start-column="51" selection-end-line="271" selection-end-column="51" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#4211#4747#0" expanded="true" />
-            <element signature="e#4746#4747#0" expanded="true" />
-            <element signature="e#8204#8205#0" expanded="true" />
-            <element signature="e#8247#8248#0" expanded="true" />
-            <element signature="e#8298#8299#0" expanded="true" />
-            <element signature="e#8342#8343#0" expanded="true" />
-            <element signature="e#8874#8875#0" expanded="true" />
-            <element signature="e#8926#8927#0" expanded="true" />
-            <element signature="e#10981#10982#0" expanded="true" />
-            <element signature="e#11014#11015#0" expanded="true" />
-            <element signature="e#11182#11183#0" expanded="true" />
-            <element signature="e#11226#11227#0" expanded="true" />
-            <element signature="e#11395#11396#0" expanded="true" />
-            <element signature="e#11445#11446#0" expanded="true" />
-            <element signature="e#11500#11501#0" expanded="true" />
+            <element signature="e#11486#11487#0" expanded="true" />
             <element signature="e#11549#11550#0" expanded="true" />
-            <element signature="e#17576#18844#0" expanded="true" />
-            <element signature="e#18843#18844#0" expanded="true" />
+            <element signature="e#11881#11882#0" expanded="true" />
+            <element signature="e#11940#11941#0" expanded="true" />
+            <element signature="e#13747#15926#0" expanded="true" />
+            <element signature="e#15925#15926#0" expanded="true" />
           </folding>
         </state>
       </provider>
