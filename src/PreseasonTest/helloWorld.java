@@ -34,6 +34,8 @@ public class helloWorld extends JComponent {
         circles.add(200);
         circles.add(300);
         circles.add(300);
+        circles.add(400);
+        circles.add(400);
 
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
@@ -88,9 +90,11 @@ public class helloWorld extends JComponent {
             };
             paintPanel.setBounds(circles.get(y),circles.get(y+1),10,10);
             lp.add(paintPanel,new Integer(x+4),0);
+            System.out.println(lp.getComponent(0));
             x = x + 1;
             y = y + 2;
         }
+            //lp.remove(10);
     }
     }
     public static void main(String[] args) {

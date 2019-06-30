@@ -1,5 +1,11 @@
 package App;
 
+/*
+ * List of current features:
+ * N to create new dot
+ * Click & Drag dot with mouse to move
+ */
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -24,13 +30,18 @@ public class mainActivity extends JPanel {
     static int xOffset = -15;
     static int yOffset = -43;
     static ArrayList<Integer> circles = new ArrayList<>();
+    static int z = 0;
+    static int v = 0;
+    static int index = 9;
+    static int clearX = 0;
+    static int clearY = 0;
 
     private static void createAndShowGUI() throws IOException {
         JFrame frame = new JFrame("HelloWorldSwing");  //Create and set up the window.
         JComponent newContentPane = new mainActivity();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        newContentPane.setOpaque(true);
+        newContentPane.setOpaque(true);     //Makes background not transparent
         frame.setContentPane(newContentPane);
 
         mouse.initListener(frame);  //Mouse Listener Initialize
@@ -38,18 +49,18 @@ public class mainActivity extends JPanel {
 
         frame.pack();
         frame.setVisible(true);
-        frame.requestFocusInWindow();
+        frame.requestFocusInWindow();   //Sets JFrame as main window
 
         threads.executeFocus(frame);  //See "threads" class
     }
 
-    public static class threads extends Thread {  //If mouse clicks away from JTextbox, it will unfocus JTextbox (for keyPressedListener)
-        public static void executeFocus(JFrame frame) {
+    public static class threads extends Thread {    //Threads to house infinite loops
+        public static void executeFocus(JFrame frame) {     //All JFrame related loops
             boolean unstoppable = true;
             Thread one = new Thread() {
                 public void run() {
                     while (unstoppable) {
-                        if (mouseClicked) {
+                        if (mouseClicked) {     //Mouse clicks away from JTextbox -> unfocus JTextbox (for keyPressedListener)
                             frame.requestFocus();
                             try {
                                 Thread.sleep(100);
@@ -63,18 +74,39 @@ public class mainActivity extends JPanel {
             one.start();
         }
 
-        public static void executeRepaint(JLayeredPane lp) {
+        public static void executeRepaintAndClear(JLayeredPane lp) {    //All JLayeredPane related loops
             boolean unstoppable = true;
             Thread one = new Thread() {
                 public void run() {
                     while (unstoppable) {
-                        if (draw.redraw) {
-                            System.out.println("redraw");
+                        if (draw.redraw) {    //Check if redraw() called--Lets me call elsewhere without JLayeredPane parameter
                             draw.showAllCircles(lp);
                             try {
                                 Thread.sleep(100);
                             } catch (Exception e) {
                                 e.printStackTrace();
+                            }
+                        }
+                        if (draw.clear) {     //Check if clearOldCircle() called--Lets me call elsewhere without JLayeredPane parameter
+                            draw.clear = false;
+                            int counter = 0;
+                            int q = 0;
+                            while (lp.getComponentCount() > q) {
+                                //System.out.println("searched component: " + lp.getComponent(q));
+                                //System.out.println("matcher Variables: " + clearX + ", " + clearY + " @ index#: " + q);
+                                if (lp.getComponent(q).toString().contains(String.valueOf(clearX)) &&
+                                        lp.getComponent(q).toString().contains(String.valueOf(clearY))) {
+                                    lp.getComponent(q).setVisible(false);   //Finding correct component index for circle + clearing it
+                                    lp.remove(q);                //Loop is necessary since component index is always changing + unknown
+                                    lp.revalidate();
+                                    draw.redraw();      //Calling repaint() method
+                                    q = 0;
+                                    counter = counter + 1;
+                                    if (counter >= 10) {   //Deals with a bug where calling .remove() sometimes doesn't clear circle
+                                        break;
+                                    }
+                                }
+                                q = q + 1;
                             }
                         }
                     }
@@ -163,11 +195,12 @@ public class mainActivity extends JPanel {
         layeredPane.add(button, new Integer(2), 0);
         layeredPane.add(tf, new Integer(1), 0);
 
-        draw.showAllCircles(layeredPane);
+        draw.showAllCircles(layeredPane);   //Draws invisible circle--Allows us to access + change paintComponent after runtime
 
-        threads.executeRepaint(layeredPane);
-        circles.clear();
-        add(layeredPane);
+        threads.executeRepaintAndClear(layeredPane);    //See "threads" class
+        circles.clear();    //Reset ArrayList of circles
+
+        add(layeredPane);       //Put layeredPane in mainActivity()
     }
 
     static class ItemChangeListener implements ItemListener {
@@ -176,17 +209,14 @@ public class mainActivity extends JPanel {
             if (event.getStateChange() == ItemEvent.SELECTED) {
                 Object item = event.getItem();
                 if (String.valueOf(item).equals("Line")) {
-                    System.out.println("Line");
                     line = true;
                     select = false;
                     curve = false;
                 } else if (String.valueOf(item).equals("Curve")) {
-                    System.out.println("Curve");
                     curve = true;
                     line = false;
                     select = false;
                 } else if (String.valueOf(item).equals("[Select]")) {
-                    System.out.println("Select");
                     select = true;
                     line = false;
                     curve = false;
@@ -218,28 +248,54 @@ public class mainActivity extends JPanel {
         }
 
         public void mouseClicked(MouseEvent evt) {
-
         }
 
         public void mouseEntered(MouseEvent evt) {  //Mouse entered window
-            System.out.println("mouseExitedFalse");
             mouseExited = false;
         }
 
         public void mouseExited(MouseEvent evt) {  //Mouse exited window
-            System.out.println("mouseExitedTrue");
             mouseExited = true;
         }
 
-        public void mousePressed(MouseEvent evt) {
-            mouseClicked = true;
+        public void mousePressed(MouseEvent evt) {  //Mouse is pressed down -> Check if clicking on circle
+            z = 0;
+            v = 0;
+            if (!circles.isEmpty()) {
+                while (z < circles.size() / 3) {
+                    if (circles.get(v) + 15 >= mouseX && circles.get(v) - 15 <= mouseX &&
+                            circles.get(v + 1) + 15 >= mouseY && circles.get(v + 1) - 15 <= mouseY) {
+                        mouseClicked = true;
+                        break;
+                    }
+                    z = z + 1;
+                    v = v + 3;
+                }
+            }
         }
 
-        public void mouseReleased(MouseEvent evt) {
-            mouseClicked = false;
+        public void mouseReleased(MouseEvent evt) {   //Mouse released -> Draw circle at new location + remove old one
+            if (mouseClicked && mouseX + xOffset <= 875 && mouseY + yOffset <= 875 &&   //Make sure mouse release on field image
+                    mouseX + xOffset >= 12 && mouseY + yOffset >= 10) {
+                clearX = circles.get(v) + xOffset;
+                clearY = circles.get(v + 1) + yOffset;
+                mouseClicked = false;
+                circles.set(v, mouseX);
+                circles.set(v + 1, mouseY);
+                draw.setColor("Red");
+                draw.clearOldCircle();
+            }
+            v = 0;
+            z = 0;
         }
 
         public void mouseDragged(MouseEvent evt) {
+            if (SwingUtilities.isLeftMouseButton(evt)) {  //Left click is held down and mouse is moved
+                mouseX = evt.getX();
+                mouseY = evt.getY();
+                //System.out.println("mouseX = " + mouseX);
+                //System.out.println("mouseY = " + mouseY);
+            }
         }
 
         public void mouseMoved(MouseEvent evt) {  //Mouse is moved
@@ -262,11 +318,10 @@ public class mainActivity extends JPanel {
         public void keyPressed(KeyEvent e)  //Key is pressed
         {
             if (e.getKeyCode() == KeyEvent.VK_N) {  //If N is pressed
-                System.out.println("'N'");
                 nPressed = true;
                 gPressed = false;
-                if (!mouseExited && mouseX + xOffset <= 875 && mouseY + yOffset <= 875 && //Checks if mouse is in the screen & in field image
-                        mouseX + xOffset >= 12 && mouseY + yOffset >= 10 && !select) {
+                if (!mouseExited && mouseX + xOffset <= 875 && mouseY + yOffset <= 875 &&
+                        mouseX + xOffset >= 12 && mouseY + yOffset >= 10 && !select) {  //Checks if mouse is in the screen & in field image
                     circles.add(mouseX);
                     circles.add(mouseY);
                     draw.setDimension(15, 15);
@@ -275,10 +330,6 @@ public class mainActivity extends JPanel {
                     draw.setColor("red");
                     draw.redraw();
                 }
-            } else if (e.getKeyCode() == KeyEvent.VK_G) {  //If G is pressed
-                System.out.println("'G'");
-                gPressed = true;
-                nPressed = false;
             }
         }
 
@@ -323,18 +374,23 @@ public class mainActivity extends JPanel {
         static boolean opaque = true;
         public static JPanel paintPanel;
         static boolean redraw = false;
-        static int x = 0;
-        static int y = 0;
+        static int loopStopper = 0;
+        static int componentChecker = 0;
         static boolean isVisible = false;
+        static boolean clear = false;
 
-        public static void setDimension(int width, int height) {
+        public static void setDimension(int width, int height) {        //Set width and height of circle
             wid = width;
             hei = height;
         }
 
+        public static void clearOldCircle() {       //If circle is moved manually with mouse, old circle is cleared
+            clear = true;
+        }
+
         public static void visibility(boolean visible) {  //Change visibility of circle
             isVisible = visible;
-        }
+        }       //Changes circle's visibility
 
         public static void backgroundTransparent(boolean transparent) {  //Change Opaque value
             if (transparent) {
@@ -346,9 +402,9 @@ public class mainActivity extends JPanel {
 
         public static void redraw() {  //Repaints the dot
             redraw = true;
-        }
+        }       //Allows paintComponent method to refresh after runtime
 
-        public static void setColor(String color) {  //Set color (Once again not very efficient)
+        public static void setColor(String color) {  //Adds color choice to ArrayList of circles (Once again not very efficient)
             if (color.equalsIgnoreCase("white")) {
                 circles.add(0);
             } else if (color.equalsIgnoreCase("light gray")) {
@@ -375,20 +431,18 @@ public class mainActivity extends JPanel {
         }
 
         public static void showAllCircles(JLayeredPane lp) {
-            if (redraw) {
-                redraw = false;
-            }
-            x = 0;
-            y = 0;
-            while (x < circles.size() / 3 && isVisible) {
+            loopStopper = 0;
+            componentChecker = 0;
+            while (loopStopper < circles.size() / 3) {      //Loops until all circles in ArrayList have been drawn
                 paintPanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
                     @Override
                     public void paintComponent(Graphics g) {  //Draws circle over JPanel
                         super.paintComponent(g);
                         paintPanel.setOpaque(opaque);
+                        paintPanel.setVisible(isVisible);
                         Graphics2D g2ds = (Graphics2D) g;
-                        Ellipse2D.Double circle = new Ellipse2D.Double(0, 0, wid, hei);
-                        switch (circles.get(circles.size() - 1)) {
+                        Ellipse2D.Double circle = new Ellipse2D.Double(0, 0, wid, hei);     //Creates the circle
+                        switch (circles.get(circles.size() - 1)) {      //Sets color
                             case (0):
                                 g2ds.setColor(Color.WHITE);
                                 break;
@@ -427,12 +481,17 @@ public class mainActivity extends JPanel {
                         g2ds.draw(circle);
                     }
                 };
-                System.out.println(circles.get(y) + " " + circles.get(y + 1));
+                if (redraw) {
+                    paintPanel.repaint();
+                    redraw = false;
+                }
                 paintPanel.setOpaque(opaque);
-                paintPanel.setBounds(circles.get(y) + xOffset, circles.get(y + 1) + yOffset, wid, hei);
-                lp.add(paintPanel, new Integer(x + 9), 0);
-                x = x + 1;
-                y = y + 3;
+                paintPanel.setBounds(circles.get(componentChecker) + xOffset, circles.get(componentChecker + 1)
+                        + yOffset, wid, hei);           //Inits/draws all circles
+                lp.add(paintPanel, new Integer(index), 0);      //Sets object constraints, a value that determines layering
+                loopStopper = loopStopper + 1;
+                componentChecker = componentChecker + 3;
+                index = index + 1;
             }
         }
     }
