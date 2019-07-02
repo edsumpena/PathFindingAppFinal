@@ -1,0 +1,8 @@
+apply plugin: 'idea'
+//and standard one
+apply plugin: 'java'
+apply plugin: 'application'
+
+run {
+    main = 'App.MainActivity'
+}

@@ -16,7 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class mainActivity extends JPanel {
+public class MainActivity extends JPanel {
     static boolean line = false;
     static boolean curve = false;
     static boolean select = true;
@@ -38,7 +38,7 @@ public class mainActivity extends JPanel {
 
     private static void createAndShowGUI() throws IOException {
         JFrame frame = new JFrame("Pathfinding");  //Create and set up the window.
-        JComponent newContentPane = new mainActivity();
+        JComponent newContentPane = new MainActivity();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         newContentPane.setOpaque(true);     //Makes background not transparent
@@ -116,7 +116,7 @@ public class mainActivity extends JPanel {
         }
     }
 
-    public mainActivity() {
+    public MainActivity() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
         layeredPane.setPreferredSize(new Dimension(1500, 900));
@@ -200,7 +200,7 @@ public class mainActivity extends JPanel {
         threads.executeRepaintAndClear(layeredPane);    //See "threads" class
         circles.clear();    //Reset ArrayList of circles
 
-        add(layeredPane);       //Put layeredPane in mainActivity()
+        add(layeredPane);       //Put layeredPane in MainActivity()
     }
 
     static class ItemChangeListener implements ItemListener {
