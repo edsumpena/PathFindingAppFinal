@@ -37,7 +37,7 @@ public class mainActivity extends JPanel {
     static int clearY = 0;
 
     private static void createAndShowGUI() throws IOException {
-        JFrame frame = new JFrame("HelloWorldSwing");  //Create and set up the window.
+        JFrame frame = new JFrame("Pathfinding");  //Create and set up the window.
         JComponent newContentPane = new mainActivity();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -122,7 +122,7 @@ public class mainActivity extends JPanel {
         layeredPane.setPreferredSize(new Dimension(1500, 900));
         BufferedImage image = null;
         try {
-            image = ImageIO.read(new File("res/images/ftcOldField.jpg"));  //Import FTC Field Image
+            image = ImageIO.read(new File("res/images/ruckus_field_lines.png"));  //Import FTC Field Image
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -187,13 +187,13 @@ public class mainActivity extends JPanel {
         draw.setColor("Yellow");
         draw.visibility(false);
 
-        layeredPane.add(l1, new Integer(8), 0);  //Add all components to layeredPane and set overlap sequence
-        layeredPane.add(l2, new Integer(7), 0);
-        layeredPane.add(jComboBox2, new Integer(6), 0);
-        layeredPane.add(jLabel, new Integer(4), 0);
-        layeredPane.add(jComboBox1, new Integer(3), 0);
-        layeredPane.add(button, new Integer(2), 0);
-        layeredPane.add(tf, new Integer(1), 0);
+        layeredPane.add(l1, 8, 0);  //Add all components to layeredPane and set overlap sequence
+        layeredPane.add(l2, 7, 0);
+        layeredPane.add(jComboBox2, 6, 0);
+        layeredPane.add(jLabel, 4, 0);
+        layeredPane.add(jComboBox1, 3, 0);
+        layeredPane.add(button,2, 0);
+        layeredPane.add(tf, 1, 0);
 
         draw.showAllCircles(layeredPane);   //Draws invisible circle--Allows us to access + change paintComponent after runtime
 
