@@ -14,5 +14,5 @@ dependencies {
 }
 
 run {
-    main = 'App.MainActivity'
+    main = 'App.Main'
 }

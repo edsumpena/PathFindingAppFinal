@@ -36,24 +36,6 @@ public class MainActivity extends JPanel {
     static int clearX = 0;
     static int clearY = 0;
 
-    private static void createAndShowGUI() throws IOException {
-        JFrame frame = new JFrame("Pathfinding");  //Create and set up the window.
-        JComponent newContentPane = new MainActivity();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        newContentPane.setOpaque(true);     //Makes background not transparent
-        frame.setContentPane(newContentPane);
-
-        mouse.initListener(frame);  //Mouse Listener Initialize
-        key.initListener(frame);  //Keyboard Listener Initialize
-
-        frame.pack();
-        frame.setVisible(true);
-        frame.requestFocusInWindow();   //Sets JFrame as main window
-
-        threads.executeFocus(frame);  //See "threads" class
-    }
-
     public static class threads extends Thread {    //Threads to house infinite loops
         public static void executeFocus(JFrame frame) {     //All JFrame related loops
             boolean unstoppable = true;
@@ -352,17 +334,7 @@ public class MainActivity extends JPanel {
         }
     }
 
-    public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {  //Creating and showing this application's GUI
-            public void run() {
-                try {
-                    createAndShowGUI();
-                } catch (IOException ex) {
-                    // handle exception...
-                }
-            }
-        });
-    }
+
 
     private void createUIComponents() {
         // TODO: place custom component creation code here
