@@ -11,6 +11,11 @@ repositories {
 
 dependencies {
     implementation 'com.acmerobotics.roadrunner:core:0.4.2'
+
+    // https://mvnrepository.com/artifact/org.eclipse.mylyn.github/org.eclipse.egit.github.core
+    compile group: 'org.eclipse.mylyn.github', name: 'org.eclipse.egit.github.core', version: '2.1.5'
+
+
 }
 
 run {

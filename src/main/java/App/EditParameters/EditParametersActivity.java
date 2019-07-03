@@ -36,5 +36,7 @@ public class EditParametersActivity {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
+
+        ParameterScanner.scan();
     }
 }
