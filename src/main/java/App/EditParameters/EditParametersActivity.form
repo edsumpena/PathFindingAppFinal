@@ -40,7 +40,7 @@
           <text value="Description"/>
         </properties>
       </component>
-      <component id="9b72a" class="javax.swing.JTextArea" binding="textArea1" default-binding="true">
+      <component id="9b72a" class="javax.swing.JTextArea" binding="description">
         <constraints>
           <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <preferred-size width="300" height="50"/>
