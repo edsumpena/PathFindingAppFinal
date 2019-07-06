@@ -11,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -282,6 +283,7 @@ public class mainActivity extends JPanel {
                 mouseClicked = false;
                 circles.set(v, mouseX);
                 circles.set(v + 1, mouseY);
+                circles.remove(v + 2);
                 draw.setColor("Red");
                 draw.clearOldCircle();
             }
@@ -373,11 +375,13 @@ public class mainActivity extends JPanel {
         static int hei = 0;
         static boolean opaque = true;
         public static JPanel paintPanel;
+        public static JPanel linePanel;
         static boolean redraw = false;
         static int loopStopper = 0;
         static int componentChecker = 0;
         static boolean isVisible = false;
         static boolean clear = false;
+        static int lineCreator = 0;
 
         public static void setDimension(int width, int height) {        //Set width and height of circle
             wid = width;
@@ -489,9 +493,37 @@ public class mainActivity extends JPanel {
                 paintPanel.setBounds(circles.get(componentChecker) + xOffset, circles.get(componentChecker + 1)
                         + yOffset, wid, hei);           //Inits/draws all circles
                 lp.add(paintPanel, new Integer(index), 0);      //Sets object constraints, a value that determines layering
+                lp.moveToFront(paintPanel);
                 loopStopper = loopStopper + 1;
                 componentChecker = componentChecker + 3;
                 index = index + 1;
+            }
+            lineCreator = 0;
+            while (circles.size() / 3 >= 2 && circles.size() > lineCreator + 6) {
+                System.out.println("size = " + circles.size() + " variable = " + lineCreator);
+                linePanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
+                    @Override
+                    public void paintComponent(Graphics g) {  //Draws circle over JPanel
+                        super.paintComponent(g);
+                        linePanel.setOpaque(false);
+                        linePanel.setVisible(isVisible);
+                        Graphics2D g2ds = (Graphics2D) g;
+                        g2ds.setColor(Color.BLACK);
+                        System.out.println("var = " + lineCreator);
+                        g2ds.drawLine(circles.get(lineCreator)+xOffset, circles.get(lineCreator + 1)+yOffset,
+                                circles.get(lineCreator + 3)+xOffset, circles.get(lineCreator + 4)+yOffset);
+                        //Line2D.Double line = new Line2D.Double(circles.get(lineCreator)+xOffset, circles.get(lineCreator + 1)+yOffset,
+                        //        circles.get(lineCreator + 3)+xOffset, circles.get(lineCreator + 4)+yOffset);
+                        //g2ds.fill(line);
+                        //g2ds.draw(line);
+                    }
+                };
+                linePanel.setOpaque(false);
+                System.out.println("var2 = " + lineCreator);
+                linePanel.setBounds(0,0,2000,2000);
+                lp.add(linePanel, new Integer(index), 0);
+                index = index + 1;
+                lineCreator = lineCreator + 3;
             }
         }
     }

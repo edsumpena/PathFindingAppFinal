@@ -5,9 +5,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.util.ArrayList;
 
-import static PreseasonTest.helloWorld.showAllCircles.paintPanel;
 
 public class helloWorld extends JComponent {
     static ArrayList<Integer> circles = new ArrayList<>();
@@ -61,11 +61,12 @@ public class helloWorld extends JComponent {
         layeredPane.add(button,new Integer(1),0);
         layeredPane.add(label2,new Integer(2),0);
         showAllCircles.loop(layeredPane);
+        drawLines.create(layeredPane);
         add(layeredPane);
         button.addActionListener(new ActionListener() {  //Button onClickListener
             @Override
             public void actionPerformed(ActionEvent arg0) {
-                paintPanel.repaint();
+                //paintPanel.repaint();
             }
         });
     }
@@ -96,6 +97,27 @@ public class helloWorld extends JComponent {
         }
             //lp.remove(10);
     }
+    }
+    public static class drawLines extends JPanel{
+        public static JPanel linePanel;
+        public static void create(JLayeredPane lp) {
+            linePanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
+                @Override
+                public void paintComponent(Graphics g) {  //Draws circle over JPanel
+                    super.paintComponent(g);
+                    linePanel.setOpaque(false);
+                    linePanel.setVisible(true);
+                    Graphics2D g2ds = (Graphics2D) g;
+                    g2ds.setColor(Color.BLACK);
+                    Line2D.Double line = new Line2D.Double(0,0,200,200);
+                    g2ds.draw(line);
+                }
+            };
+            linePanel.setOpaque(false);
+            linePanel.setBounds(0,0,200,200);
+            lp.add(linePanel, new Integer(10), 0);
+            System.out.println(lp.getComponent(0));
+        }
     }
     public static void main(String[] args) {
         //Schedule a job for the event-dispatching thread:
