@@ -17,7 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class mainActivity extends JPanel {
+public class MainActivity extends JPanel {
     static boolean line = false;
     static boolean curve = false;
     static boolean select = true;
@@ -36,24 +36,6 @@ public class mainActivity extends JPanel {
     static int index = 9;
     static int clearX = 0;
     static int clearY = 0;
-
-    private static void createAndShowGUI() throws IOException {
-        JFrame frame = new JFrame("HelloWorldSwing");  //Create and set up the window.
-        JComponent newContentPane = new mainActivity();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        newContentPane.setOpaque(true);     //Makes background not transparent
-        frame.setContentPane(newContentPane);
-
-        mouse.initListener(frame);  //Mouse Listener Initialize
-        key.initListener(frame);  //Keyboard Listener Initialize
-
-        frame.pack();
-        frame.setVisible(true);
-        frame.requestFocusInWindow();   //Sets JFrame as main window
-
-        threads.executeFocus(frame);  //See "threads" class
-    }
 
     public static class threads extends Thread {    //Threads to house infinite loops
         public static void executeFocus(JFrame frame) {     //All JFrame related loops
@@ -117,13 +99,13 @@ public class mainActivity extends JPanel {
         }
     }
 
-    public mainActivity() {
+    public MainActivity() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
         layeredPane.setPreferredSize(new Dimension(1500, 900));
         BufferedImage image = null;
         try {
-            image = ImageIO.read(new File("res/images/ftcOldField.jpg"));  //Import FTC Field Image
+            image = ImageIO.read(new File("res/images/ruckus_field_lines.png"));  //Import FTC Field Image
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -188,20 +170,20 @@ public class mainActivity extends JPanel {
         draw.setColor("Yellow");
         draw.visibility(false);
 
-        layeredPane.add(l1, new Integer(8), 0);  //Add all components to layeredPane and set overlap sequence
-        layeredPane.add(l2, new Integer(7), 0);
-        layeredPane.add(jComboBox2, new Integer(6), 0);
-        layeredPane.add(jLabel, new Integer(4), 0);
-        layeredPane.add(jComboBox1, new Integer(3), 0);
-        layeredPane.add(button, new Integer(2), 0);
-        layeredPane.add(tf, new Integer(1), 0);
+        layeredPane.add(l1, 8, 0);  //Add all components to layeredPane and set overlap sequence
+        layeredPane.add(l2, 7, 0);
+        layeredPane.add(jComboBox2, 6, 0);
+        layeredPane.add(jLabel, 4, 0);
+        layeredPane.add(jComboBox1, 3, 0);
+        layeredPane.add(button,2, 0);
+        layeredPane.add(tf, 1, 0);
 
         draw.showAllCircles(layeredPane);   //Draws invisible circle--Allows us to access + change paintComponent after runtime
 
         threads.executeRepaintAndClear(layeredPane);    //See "threads" class
         circles.clear();    //Reset ArrayList of circles
 
-        add(layeredPane);       //Put layeredPane in mainActivity()
+        add(layeredPane);       //Put layeredPane in MainActivity()
     }
 
     static class ItemChangeListener implements ItemListener {
@@ -354,17 +336,7 @@ public class mainActivity extends JPanel {
         }
     }
 
-    public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {  //Creating and showing this application's GUI
-            public void run() {
-                try {
-                    createAndShowGUI();
-                } catch (IOException ex) {
-                    // handle exception...
-                }
-            }
-        });
-    }
+
 
     private void createUIComponents() {
         // TODO: place custom component creation code here
