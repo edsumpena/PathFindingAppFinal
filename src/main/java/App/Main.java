@@ -19,8 +19,15 @@ public class Main {
     }
     private static void createAndShowGUI() throws IOException {
         JFrame frame = new JFrame("Pathfinding");  //Create and set up the window.
+        MainActivity newContentPane = new MainActivity();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         EditParametersActivity editParametersActivity = new EditParametersActivity();
+        newContentPane.setOpaque(false);
+        frame.setContentPane(newContentPane);
+
+        MainActivity.mouse.initListener(frame);
+        MainActivity.key.initListener(frame);
+        MainActivity.threads.executeFocus(frame);
 
         frame.pack();
         frame.setVisible(true);

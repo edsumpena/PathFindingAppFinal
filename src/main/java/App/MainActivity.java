@@ -28,8 +28,9 @@ public class MainActivity extends JPanel {
     static boolean alreadyAdded = false;
     static boolean mouseExited = true;
     static boolean mouseClicked = false;
+    static boolean mouseClickedFocus = false;
     static int xOffset = -15;
-    static int yOffset = -43;
+    static int yOffset = -40;
     static ArrayList<Integer> circles = new ArrayList<>();
     static int z = 0;
     static int v = 0;
@@ -38,18 +39,22 @@ public class MainActivity extends JPanel {
     static int clearY = 0;
 
     public static class threads extends Thread {    //Threads to house infinite loops
+        static boolean unstoppable = true;
         public static void executeFocus(JFrame frame) {     //All JFrame related loops
-            boolean unstoppable = true;
             Thread one = new Thread() {
                 public void run() {
                     while (unstoppable) {
-                        if (mouseClicked) {     //Mouse clicks away from JTextbox -> unfocus JTextbox (for keyPressedListener)
+                        if (mouseClickedFocus) {     //Mouse clicks away from JTextbox -> unfocus JTextbox (for keyPressedListener)
                             frame.requestFocus();
                             try {
                                 Thread.sleep(100);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+                        }
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException ignore) {
                         }
                     }
                 }
@@ -58,7 +63,6 @@ public class MainActivity extends JPanel {
         }
 
         public static void executeRepaintAndClear(JLayeredPane lp) {    //All JLayeredPane related loops
-            boolean unstoppable = true;
             Thread one = new Thread() {
                 public void run() {
                     while (unstoppable) {
@@ -92,6 +96,10 @@ public class MainActivity extends JPanel {
                                 q = q + 1;
                             }
                         }
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException ignore) {
+                        }
                     }
                 }
             };
@@ -102,7 +110,7 @@ public class MainActivity extends JPanel {
     public MainActivity() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setPreferredSize(new Dimension(1500, 900));
+        layeredPane.setPreferredSize(new Dimension(1500, 750));
         BufferedImage image = null;
         try {
             image = ImageIO.read(new File("res/images/ruckus_field_lines.png"));  //Import FTC Field Image
@@ -110,11 +118,11 @@ public class MainActivity extends JPanel {
             e.printStackTrace();
             System.exit(1);
         }
-        Image newImage = image.getScaledInstance(900, 900, java.awt.Image.SCALE_SMOOTH);  //Scale up the image in size
+        Image newImage = image.getScaledInstance(750, 750, java.awt.Image.SCALE_SMOOTH);  //Scale up the image in size
         ImageIcon imageIcon = new ImageIcon(newImage);
         JLabel jLabel = new JLabel();
         jLabel.setIcon(imageIcon);
-        jLabel.setBounds(0, 0, 900, 900);
+        jLabel.setBounds(0, 0, 750, 750);
 
         JLabel l1 = new JLabel("Drive Options:");  //Labels
         l1.setFont(l1.getFont().deriveFont(15f));
@@ -242,6 +250,7 @@ public class MainActivity extends JPanel {
         }
 
         public void mousePressed(MouseEvent evt) {  //Mouse is pressed down -> Check if clicking on circle
+            mouseClickedFocus = true;
             z = 0;
             v = 0;
             if (!circles.isEmpty()) {
@@ -258,8 +267,9 @@ public class MainActivity extends JPanel {
         }
 
         public void mouseReleased(MouseEvent evt) {   //Mouse released -> Draw circle at new location + remove old one
-            if (mouseClicked && mouseX + xOffset <= 875 && mouseY + yOffset <= 875 &&   //Make sure mouse release on field image
-                    mouseX + xOffset >= 12 && mouseY + yOffset >= 10) {
+            mouseClickedFocus = false;
+            if (mouseClicked && mouseX + xOffset <= 735 && mouseY + yOffset <= 735 &&
+                    mouseX + xOffset >= 0 && mouseY + yOffset >= 0) {
                 clearX = circles.get(v) + xOffset;
                 clearY = circles.get(v + 1) + yOffset;
                 mouseClicked = false;
@@ -304,8 +314,8 @@ public class MainActivity extends JPanel {
             if (e.getKeyCode() == KeyEvent.VK_N) {  //If N is pressed
                 nPressed = true;
                 gPressed = false;
-                if (!mouseExited && mouseX + xOffset <= 875 && mouseY + yOffset <= 875 &&
-                        mouseX + xOffset >= 12 && mouseY + yOffset >= 10 && !select) {  //Checks if mouse is in the screen & in field image
+                if (!mouseExited && mouseX + xOffset <= 735 && mouseY + yOffset <= 735 &&
+                        mouseX + xOffset >= 0 && mouseY + yOffset >= 0 && !select) {  //Checks if mouse is in the screen & in field image
                     circles.add(mouseX);
                     circles.add(mouseY);
                     draw.setDimension(15, 15);
@@ -464,7 +474,7 @@ public class MainActivity extends JPanel {
                 paintPanel.setOpaque(opaque);
                 paintPanel.setBounds(circles.get(componentChecker) + xOffset, circles.get(componentChecker + 1)
                         + yOffset, wid, hei);           //Inits/draws all circles
-                lp.add(paintPanel, new Integer(index), 0);      //Sets object constraints, a value that determines layering
+                lp.add(paintPanel, index, 0);      //Sets object constraints, a value that determines layering
                 lp.moveToFront(paintPanel);
                 loopStopper = loopStopper + 1;
                 componentChecker = componentChecker + 3;
@@ -493,7 +503,7 @@ public class MainActivity extends JPanel {
                 linePanel.setOpaque(false);
                 System.out.println("var2 = " + lineCreator);
                 linePanel.setBounds(0,0,2000,2000);
-                lp.add(linePanel, new Integer(index), 0);
+                lp.add(linePanel, index, 0);
                 index = index + 1;
                 lineCreator = lineCreator + 3;
             }
