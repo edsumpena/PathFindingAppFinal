@@ -5,34 +5,33 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
 public class ParametersTable {
-    DefaultTableModel tableModel;
+    CustomTableModel tableModel;
     JTable table;
 
-    Object[] header = {
-        "Type",
-            "Name",
-            "Description",
-            "Value"
-    };
 
     public ParametersTable(JTable table) {
         this.table = table;
-        tableModel = new DefaultTableModel(header ,0);
+        tableModel = new CustomTableModel();
         table.setModel(tableModel);
     }
 
     public void addTestData() {
-        tableModel.addRow(
-                new Parameter(ParameterType.DOUBLE, "Test", "Description", 3).getTableEntries()
-        );
-        table.invalidate();
+        Parameter[] testData = {
+                new Parameter(ParameterType.BOOLEAN, "Test2", "description", "true"),
+                new Parameter(ParameterType.DOUBLE, "Test", "Description", "3")
+        };
+
+        for (int i = 0; i < testData.length; i++) {
+            tableModel.addRow(testData[i]);
+        }
+
     }
 
     public JTable getTable() {
         return table;
     }
 
-    public DefaultTableModel getTableModel() {
+    public CustomTableModel getTableModel() {
         return tableModel;
     }
 }

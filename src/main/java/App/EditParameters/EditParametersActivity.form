@@ -14,7 +14,9 @@
             <preferred-size width="150" height="-1"/>
           </grid>
         </constraints>
-        <properties/>
+        <properties>
+          <editable value="false"/>
+        </properties>
       </component>
       <component id="9f428" class="javax.swing.JLabel">
         <constraints>
@@ -66,6 +68,14 @@
           </component>
         </children>
       </scrollpane>
+      <component id="338af" class="javax.swing.JButton" binding="save">
+        <constraints>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Save"/>
+        </properties>
+      </component>
     </children>
   </grid>
 </form>

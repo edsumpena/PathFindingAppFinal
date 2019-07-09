@@ -8,6 +8,7 @@ public class EditParametersActivity {
     private JTextField name;
     private JTextArea description;
     private JButton refresh;
+    private JButton save;
 
     // region accessors
     public JPanel getPanel() {
@@ -28,6 +29,10 @@ public class EditParametersActivity {
 
     public JButton getRefresh() {
         return refresh;
+    }
+
+    public JButton getSave() {
+        return save;
     }
     // endregion
 
