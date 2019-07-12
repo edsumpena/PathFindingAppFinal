@@ -66,8 +66,8 @@ public class MainActivity extends JPanel {
             Thread one = new Thread() {
                 public void run() {
                     while (unstoppable) {
-                        if (draw.redraw) {    //Check if redraw() called--Lets me call elsewhere without JLayeredPane parameter
-                            draw.showAllCircles(lp);
+                        if (draw.redrawCircle && draw.redrawLine) {    //Check if redraw() called--Lets me call elsewhere without JLayeredPane parameter
+                            draw.showAllCirclesAndLines(lp);
                             try {
                                 Thread.sleep(100);
                             } catch (Exception e) {
@@ -186,7 +186,7 @@ public class MainActivity extends JPanel {
         layeredPane.add(button,2, 0);
         layeredPane.add(tf, 1, 0);
 
-        draw.showAllCircles(layeredPane);   //Draws invisible circle--Allows us to access + change paintComponent after runtime
+        draw.showAllCirclesAndLines(layeredPane);   //Draws invisible circle--Allows us to access + change paintComponent after runtime
 
         threads.executeRepaintAndClear(layeredPane);    //See "threads" class
         circles.clear();    //Reset ArrayList of circles
@@ -358,7 +358,8 @@ public class MainActivity extends JPanel {
         static boolean opaque = true;
         public static JPanel paintPanel;
         public static JPanel linePanel;
-        static boolean redraw = false;
+        static boolean redrawCircle = false;
+        static boolean redrawLine = false;
         static int loopStopper = 0;
         static int componentChecker = 0;
         static boolean isVisible = false;
@@ -387,7 +388,8 @@ public class MainActivity extends JPanel {
         }
 
         public static void redraw() {  //Repaints the dot
-            redraw = true;
+            redrawCircle = true;
+            redrawLine = true;
         }       //Allows paintComponent method to refresh after runtime
 
         public static void setColor(String color) {  //Adds color choice to ArrayList of circles (Once again not very efficient)
@@ -416,7 +418,7 @@ public class MainActivity extends JPanel {
             }
         }
 
-        public static void showAllCircles(JLayeredPane lp) {
+        public static void showAllCirclesAndLines(JLayeredPane lp) {
             loopStopper = 0;
             componentChecker = 0;
             while (loopStopper < circles.size() / 3) {      //Loops until all circles in ArrayList have been drawn
@@ -467,9 +469,9 @@ public class MainActivity extends JPanel {
                         g2ds.draw(circle);
                     }
                 };
-                if (redraw) {
+                if (redrawCircle) {
                     paintPanel.repaint();
-                    redraw = false;
+                    redrawCircle = false;
                 }
                 paintPanel.setOpaque(opaque);
                 paintPanel.setBounds(circles.get(componentChecker) + xOffset, circles.get(componentChecker + 1)
@@ -492,14 +494,18 @@ public class MainActivity extends JPanel {
                         Graphics2D g2ds = (Graphics2D) g;
                         g2ds.setColor(Color.BLACK);
                         System.out.println("var = " + lineCreator);
-                        g2ds.drawLine(circles.get(lineCreator)+xOffset, circles.get(lineCreator + 1)+yOffset,
-                                circles.get(lineCreator + 3)+xOffset, circles.get(lineCreator + 4)+yOffset);
-                        //Line2D.Double line = new Line2D.Double(circles.get(lineCreator)+xOffset, circles.get(lineCreator + 1)+yOffset,
+                        //g2ds.drawLine(circles.get(lineCreator)+xOffset, circles.get(lineCreator + 1)+yOffset,
                         //        circles.get(lineCreator + 3)+xOffset, circles.get(lineCreator + 4)+yOffset);
-                        //g2ds.fill(line);
-                        //g2ds.draw(line);
+                        Line2D.Double line = new Line2D.Double(circles.get(lineCreator)+xOffset, circles.get(lineCreator + 1)+yOffset,
+                                circles.get(lineCreator + 3)+xOffset, circles.get(lineCreator + 4)+yOffset);
+                        g2ds.fill(line);
+                        g2ds.draw(line);
                     }
                 };
+                if(redrawLine){
+                    linePanel.repaint();
+                    redrawLine = false;
+                }
                 linePanel.setOpaque(false);
                 System.out.println("var2 = " + lineCreator);
                 linePanel.setBounds(0,0,2000,2000);
