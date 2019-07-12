@@ -7,6 +7,8 @@ public class EditParametersActivity {
     private JTable parametersTable;
     private JTextField name;
     private JTextArea description;
+    private JButton refresh;
+    private JButton save;
 
     // region accessors
     public JPanel getPanel() {
@@ -24,10 +26,19 @@ public class EditParametersActivity {
     public JTextArea getDescription() {
         return description;
     }
+
+    public JButton getRefresh() {
+        return refresh;
+    }
+
+    public JButton getSave() {
+        return save;
+    }
     // endregion
 
     public EditParametersActivity() {
         parametersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        Controller controller = new Controller(this, new ParametersTable(parametersTable));
     }
 
     public static void main(String[] args) {
@@ -37,6 +48,8 @@ public class EditParametersActivity {
         frame.pack();
         frame.setVisible(true);
 
-        ParameterScanner.scan();
+        ParameterScannerLocal.scan();
     }
+
+
 }
