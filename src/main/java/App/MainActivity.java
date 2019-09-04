@@ -4,23 +4,45 @@ package App;
  * List of current features:
  * N to create new dot
  * Click & Drag dot with mouse to move
+ * Save Path File Output: .path compressed file containing .cir & .line text editor files
+ * .cir & .line text files contain serialized "circles" & "lineSettingsAndParameters" arrays:
+ * Example output for 2 circle + 1 line:
+ *  -ArrayList "circles": {circle1XVal, circle1YVal, circle1Color, circle2XVal, circle2YVal, circle2Color}
+ *  -ArrayList "lineSettingsAndParameters.get(0)": {line1Type}
+ *  -ArrayList "lineSettingsAndParameters.get(1)": {lineX1, lineY1}
+ *  -ArrayList "lineSettingsAndParameters.get(2)": {lineX2, lineY2}
+ *  -ArrayList "lineSettingsAndParameters.get(3)": {lineX3, lineY3}
  */
+
+import App.Converters.FromAndToPose2D;
+import App.Debugger.cmdLine;
+import App.ReadingAndWriting.MotorSetup;
+import App.ReadingAndWriting.SerializeAndDeserialize;
+import App.ReadingAndWriting.ZipAndUnzip;
+import App.Wrappers.TrajBuilderWrapper;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
+import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
 
 public class MainActivity extends JPanel {
     static boolean line = false;
     static boolean curve = false;
     static boolean select = true;
+    static boolean strafe = false;
+    static boolean reverse = false;
     static int mouseX = 0;
     static int mouseY = 0;
     static boolean nPressed = false;
@@ -32,14 +54,26 @@ public class MainActivity extends JPanel {
     static int xOffset = -15;
     static int yOffset = -40;
     static ArrayList<Integer> circles = new ArrayList<>();
+    static ArrayList<ArrayList<String>> lineSettingsAndParameters = new ArrayList<>();
+    static ArrayList<String> settings = new ArrayList<>();
+    static ArrayList<String> params1 = new ArrayList<>();
+    static ArrayList<String> params2 = new ArrayList<>();
+    static ArrayList<String> params3 = new ArrayList<>();
+    static ArrayList<Integer> motorExecutedLocation = new ArrayList<>();
+    static ArrayList<String> motorNames = new ArrayList<>();
+    static String currentlySelected = "";
     static int z = 0;
     static int v = 0;
     static int index = 9;
     static int clearX = 0;
     static int clearY = 0;
+    static int lineTypesLooped = 0;
+    static File prevFilePath;
+    static ObjectMapper objectMapper = new ObjectMapper();
 
     public static class threads extends Thread {    //Threads to house infinite loops
         static boolean unstoppable = true;
+
         public static void executeFocus(JFrame frame) {     //All JFrame related loops
             Thread one = new Thread() {
                 public void run() {
@@ -62,11 +96,12 @@ public class MainActivity extends JPanel {
             one.start();
         }
 
-        public static void executeRepaintAndClear(JLayeredPane lp) {    //All JLayeredPane related loops
+        public static void executeRepaintAndClear(JLayeredPane lp, JLabel jl) {    //All JLayeredPane related loops
             Thread one = new Thread() {
                 public void run() {
                     while (unstoppable) {
-                        if (draw.redrawCircle && draw.redrawLine) {    //Check if redraw() called--Lets me call elsewhere without JLayeredPane parameter
+                        lp.moveToBack(jl);
+                        if (draw.redrawCircle || draw.redrawLine || draw.redrawCurve) {    //Check if redraw() called--Lets me call elsewhere without JLayeredPane parameter
                             draw.showAllCirclesAndLines(lp);
                             try {
                                 Thread.sleep(100);
@@ -82,7 +117,8 @@ public class MainActivity extends JPanel {
                                 //System.out.println("searched component: " + lp.getComponent(q));
                                 //System.out.println("matcher Variables: " + clearX + ", " + clearY + " @ index#: " + q);
                                 if (lp.getComponent(q).toString().contains(String.valueOf(clearX)) &&
-                                        lp.getComponent(q).toString().contains(String.valueOf(clearY))) {
+                                        lp.getComponent(q).toString().contains(String.valueOf(clearY)) &&
+                                        lp.getComponent(q).toString().contains("15x15")) {
                                     lp.getComponent(q).setVisible(false);   //Finding correct component index for circle + clearing it
                                     lp.remove(q);                //Loop is necessary since component index is always changing + unknown
                                     lp.revalidate();
@@ -97,7 +133,7 @@ public class MainActivity extends JPanel {
                             }
                         }
                         try {
-                            Thread.sleep(10);
+                            Thread.sleep(50);
                         } catch (InterruptedException ignore) {
                         }
                     }
@@ -110,8 +146,17 @@ public class MainActivity extends JPanel {
     public MainActivity() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setPreferredSize(new Dimension(1500, 750));
+        layeredPane.setPreferredSize(new Dimension(1300, 750));
         BufferedImage image = null;
+        ArrayList<String> name = new ArrayList<>();
+        ArrayList<String> types = new ArrayList<>();
+        name.add("WheelDcMotors");
+        name.add("ArmDcMotor");
+        name.add("SmallServoArm");
+        types.add("DCWheel");
+        types.add("DCArm");
+        types.add("Servo");
+        MotorSetup.exportMotors(name,types);
         try {
             image = ImageIO.read(new File("res/images/ruckus_field_lines.png"));  //Import FTC Field Image
         } catch (Exception e) {
@@ -126,37 +171,56 @@ public class MainActivity extends JPanel {
 
         JLabel l1 = new JLabel("Drive Options:");  //Labels
         l1.setFont(l1.getFont().deriveFont(15f));
-        l1.setBounds(1000, 50, 200, 30);
+        l1.setBounds(850, 50, 200, 30);
         l1.setFocusable(false);
 
         JLabel l2 = new JLabel("Motor Options:");
         l2.setFont(l1.getFont().deriveFont(15f));
-        l2.setBounds(1250, 50, 200, 30);
+        l2.setBounds(1100, 50, 200, 30);
         l2.setFocusable(false);
 
         JComboBox jComboBox1 = new JComboBox();  //Dropdown box creator for Drive Options
         jComboBox1.addItem("[Select]");  //Dropdown options for Drive Options
         jComboBox1.addItem("Line");
         jComboBox1.addItem("Curve");
-        jComboBox1.setFont(jComboBox1.getFont().deriveFont(15f));
+        jComboBox1.addItem("Strafe");
+        jComboBox1.addItem("Reverse");
+        jComboBox1.addItem("Spline To");
+        jComboBox1.setFont(jComboBox1.getFont().deriveFont(13f));
         jComboBox1.addItemListener(new ItemChangeListener());
-        jComboBox1.setBounds(950, 100, 200, 30);
+        jComboBox1.setBounds(800, 100, 200, 30);
         jComboBox1.setFocusable(false);
 
         JComboBox jComboBox2 = new JComboBox();  //Dropdown box creator for Motor Options
         jComboBox2.addItem("[Select]");  //Dropdown options for Motor Options
-        jComboBox2.setFont(jComboBox1.getFont().deriveFont(15f));
+        cmdLine.debugger.dispVar("motors",MotorSetup.importMotors().get(0),0,"N/A");
+        if(!MotorSetup.importMotors().get(0).get(0).contains("Error")){
+            int i = 0;
+            while (MotorSetup.importMotors().size() >= i){
+                jComboBox2.addItem(MotorSetup.importMotors().get(0).get(i) + " (" + MotorSetup.importMotors().get(1).get(i) + ")");
+                i += 1;
+            }
+        }
+        jComboBox2.setFont(jComboBox1.getFont().deriveFont(13f));
         jComboBox2.addItemListener(new ItemChangeListener2());
-        jComboBox2.setBounds(1200, 100, 200, 30);
+        jComboBox2.setBounds(1050, 100, 200, 30);
         jComboBox2.setFocusable(false);
 
         JButton button = new JButton("Get Path Data");  //"Get Path Data" button
-        button.setBounds(1075, 200, 200, 50);
+        button.setBounds(925, 200, 200, 50);
         button.setFocusable(false);
 
+        JButton saveButton = new JButton("Save Path");
+        saveButton.setBounds(1100, 400, 100,35);
+        saveButton.setFocusable(false);
+
+        JButton openPathButton = new JButton("Open Path");
+        openPathButton.setBounds(850, 400, 100,35);
+        openPathButton.setFocusable(false);
+
         JTextField tf = new JTextField();  //Output Text Field
-        tf.setBounds(950, 325, 500, 30);
-        tf.setFont(tf.getFont().deriveFont(18f));
+        tf.setBounds(775, 325, 500, 30);
+        tf.setFont(tf.getFont().deriveFont(13f));
         tf.setFocusable(true);
 
         layeredPane.moveToBack(jLabel);
@@ -164,12 +228,127 @@ public class MainActivity extends JPanel {
         button.addActionListener(new ActionListener() {  //Button onClickListener
             @Override
             public void actionPerformed(ActionEvent arg0) {
-                if (line) {
-                    tf.setText("Line Selected");
-                } else if (select) {
-                    tf.setText("Please Select Mode");
-                } else if (curve) {
-                    tf.setText("Curve Selected");
+                try {
+                    TrajectoryBuilder driveTraj = TrajBuilderWrapper.getWheelTrajectoryBuilder(FromAndToPose2D.pointsToPose2d(circles,
+                            0,1,3), motorNames);
+                    String motors = objectMapper.writeValueAsString(motorNames);
+                    String moveMotorLocation = objectMapper.writeValueAsString(motorExecutedLocation);
+                    String trajectory = objectMapper.writeValueAsString(driveTraj);
+                    String encodedTraj = Base64.getEncoder().encodeToString(trajectory.getBytes());
+                    String encodedLoc = Base64.getEncoder().encodeToString(moveMotorLocation.getBytes());
+                    String encodedMotors = Base64.getEncoder().encodeToString(motors.getBytes());
+                    tf.setText("TRAJ:" + encodedTraj + ",MOTORS;" + encodedMotors + ",LOCATION-" + encodedLoc);
+                }
+                catch (Exception e){
+                    System.err.println(e.toString());
+                }
+            }
+        });
+        openPathButton.addActionListener(new ActionListener() {  //Button onClickListener
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setDialogTitle("Open Path");
+                fileChooser.setPreferredSize(new Dimension(800,600));
+                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fileChooser.removeChoosableFileFilter(fileChooser.getFileFilter());  //remove the default file filter
+                FileFilter filter = new FileNameExtensionFilter("PATH file", "path");
+                fileChooser.addChoosableFileFilter(filter); //add PATH file filter
+
+                if(prevFilePath != null){
+                    fileChooser.setCurrentDirectory(prevFilePath);
+                }
+                int result = fileChooser.showOpenDialog(layeredPane);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File fileToRead = fileChooser.getSelectedFile();
+                    System.out.println(fileToRead);
+                    ZipAndUnzip.unzipFolder(String.valueOf(fileToRead), String.valueOf(fileChooser.getCurrentDirectory()));
+                    String name = String.valueOf(fileToRead).substring(String.valueOf(fileToRead).lastIndexOf("\\") + 1,
+                            String.valueOf(fileToRead).indexOf("."));
+                    String cirDir = fileChooser.getCurrentDirectory() + "\\" + name + "Circles.cir";
+                    String lineDir = fileChooser.getCurrentDirectory() + "\\" + name + "Traj.line";
+                    circles = SerializeAndDeserialize.deserialize(cirDir,false);
+                    lineSettingsAndParameters = SerializeAndDeserialize.deserialize(lineDir,true);
+                    ZipAndUnzip.deleteAndOrRename(cirDir,"","",true,false);
+                    ZipAndUnzip.deleteAndOrRename(lineDir,"","",true,false);
+                    prevFilePath = fileChooser.getCurrentDirectory();
+                    ArrayList<Integer> indexTempVals = new ArrayList<>();
+                    indexTempVals.add(0);
+                    indexTempVals.add(1);
+                    indexTempVals.add(2);
+                    indexTempVals.add(3);
+                    indexTempVals.add(4);
+                    indexTempVals.add(5);
+                    cmdLine.debugger.dispVar("circles",circles,indexTempVals,-1000);
+                    cmdLine.debugger.dispVar("lineSettingsAndParameters.get(0)",lineSettingsAndParameters.get(0),indexTempVals,"N/A");
+                    cmdLine.debugger.dispVar("lineSettingsAndParameters.get(1)",lineSettingsAndParameters.get(1),indexTempVals,"N/A");
+                    cmdLine.debugger.dispVar("lineSettingsAndParameters.get(2)",lineSettingsAndParameters.get(2),indexTempVals,"N/A");
+                } else if (result == JFileChooser.CANCEL_OPTION) {
+                    prevFilePath = fileChooser.getCurrentDirectory();
+                } else if (result == JFileChooser.ERROR_OPTION) {
+                    prevFilePath = fileChooser.getCurrentDirectory();
+                }
+            }
+        });
+        saveButton.addActionListener(new ActionListener() {  //Button onClickListener
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                JFileChooser fileChooser = new JFileChooser(){
+                };
+                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fileChooser.removeChoosableFileFilter(fileChooser.getFileFilter());  //remove the default file filter
+                FileFilter filter = new FileNameExtensionFilter("PATH file", "path");
+                fileChooser.addChoosableFileFilter(filter); //add PATH file filter
+
+                fileChooser.setDialogTitle("Save Path");
+                fileChooser.setPreferredSize(new Dimension(800,600));
+                fileChooser.setSelectedFile(new File("untitled.path"));
+                if(prevFilePath != null){
+                    fileChooser.setCurrentDirectory(prevFilePath);
+                }
+                String fileNoExt = "";
+                int userSelection = fileChooser.showSaveDialog(layeredPane);
+                if (userSelection == JFileChooser.APPROVE_OPTION) {
+                    File f = fileChooser.getSelectedFile();
+                    if(!String.valueOf(f).contains(".path")){
+                        int dialogButton = JOptionPane.ERROR_MESSAGE;
+                        JOptionPane.showMessageDialog(null, "Error: File must contain '.path' extension","Error",dialogButton);
+                    } else if(f.exists()){
+                        int dialogButton2 = JOptionPane.YES_NO_OPTION;
+                        int dialogResult = JOptionPane.showConfirmDialog (null,
+                                "File Already Exists! Do you want to Replace?","File Exists",dialogButton2);
+                        if(dialogResult == JOptionPane.YES_OPTION){
+                            f.setExecutable(false);
+                            f.setReadable(true);
+                            f.setWritable(true);
+                            f.delete();
+                            File fileToSave = fileChooser.getSelectedFile();
+                            fileChooser.setCurrentDirectory(fileChooser.getSelectedFile());
+                            if (String.valueOf(fileToSave).contains(".path")) {
+                                fileNoExt = String.valueOf(fileToSave).substring(String.valueOf(fileToSave).lastIndexOf("\\") + 1,
+                                        String.valueOf(fileToSave).indexOf("."));
+                            }
+                            prevFilePath = fileChooser.getCurrentDirectory();
+                            SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, String.valueOf(fileToSave),
+                                    fileNoExt);
+                            ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(),fileNoExt);
+                        }
+                    } else {
+                        File fileToSave = fileChooser.getSelectedFile();
+                        if (String.valueOf(fileToSave).contains(".path")) {
+                            fileNoExt = String.valueOf(fileToSave).substring(String.valueOf(fileToSave).lastIndexOf("\\") + 1,
+                                    String.valueOf(fileToSave).indexOf("."));
+                        }
+                        prevFilePath = fileChooser.getCurrentDirectory();
+                        SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, String.valueOf(fileToSave),
+                                fileNoExt);
+
+                        ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(),fileNoExt);
+                    }
+                } else if (userSelection == JFileChooser.CANCEL_OPTION) {
+                    prevFilePath = fileChooser.getCurrentDirectory();
+                } else if (userSelection == JFileChooser.ERROR_OPTION) {
+                    prevFilePath = fileChooser.getCurrentDirectory();
                 }
             }
         });
@@ -178,17 +357,19 @@ public class MainActivity extends JPanel {
         draw.setColor("Yellow");
         draw.visibility(false);
 
+        layeredPane.add(openPathButton, 10, 0);
+        layeredPane.add(saveButton, 9, 0);
         layeredPane.add(l1, 8, 0);  //Add all components to layeredPane and set overlap sequence
         layeredPane.add(l2, 7, 0);
         layeredPane.add(jComboBox2, 6, 0);
         layeredPane.add(jLabel, 4, 0);
         layeredPane.add(jComboBox1, 3, 0);
-        layeredPane.add(button,2, 0);
+        layeredPane.add(button, 2, 0);
         layeredPane.add(tf, 1, 0);
 
         draw.showAllCirclesAndLines(layeredPane);   //Draws invisible circle--Allows us to access + change paintComponent after runtime
 
-        threads.executeRepaintAndClear(layeredPane);    //See "threads" class
+        threads.executeRepaintAndClear(layeredPane, jLabel);    //See "threads" class
         circles.clear();    //Reset ArrayList of circles
 
         add(layeredPane);       //Put layeredPane in MainActivity()
@@ -203,14 +384,32 @@ public class MainActivity extends JPanel {
                     line = true;
                     select = false;
                     curve = false;
+                    strafe = false;
+                    reverse = false;
                 } else if (String.valueOf(item).equals("Curve")) {
                     curve = true;
                     line = false;
                     select = false;
+                    strafe = false;
+                    reverse = false;
                 } else if (String.valueOf(item).equals("[Select]")) {
                     select = true;
                     line = false;
                     curve = false;
+                    strafe = false;
+                    reverse = false;
+                } else if (String.valueOf(item).equals("Reverse")){
+                    line = false;
+                    select = false;
+                    curve = false;
+                    strafe = false;
+                    reverse = true;
+                } else if(String.valueOf(item).equals("Strafe")){
+                    line = false;
+                    select = false;
+                    curve = false;
+                    strafe = true;
+                    reverse = false;
                 }
             }
         }
@@ -221,12 +420,17 @@ public class MainActivity extends JPanel {
         public void itemStateChanged(ItemEvent event) {  //Which dropdown option is selected for Motor Options?
             if (event.getStateChange() == ItemEvent.SELECTED) {
                 Object item = event.getItem();
-                if (String.valueOf(item).equals("[Select")) {
-                    System.out.println("Line");
-                } else if (String.valueOf(item).equals("")) {
-                    System.out.println("");
-                } else if (String.valueOf(item).equals(".")) {
-                    System.out.println("");
+                if (String.valueOf(item).equals("[Select]")) {
+                    currentlySelected = "[Select]";
+                }
+                if(!MotorSetup.importMotors().get(0).get(0).contains("Error")) {
+                    int i = 0;
+                    while (MotorSetup.importMotors().get(0).size() >= i) {
+                        if (MotorSetup.importMotors().get(0).get(i).equals(String.valueOf(item))){
+                            currentlySelected = MotorSetup.importMotors().get(0).get(i);
+                        }
+                        i += 1;
+                    }
                 }
             }
         }
@@ -315,13 +519,23 @@ public class MainActivity extends JPanel {
                 nPressed = true;
                 gPressed = false;
                 if (!mouseExited && mouseX + xOffset <= 735 && mouseY + yOffset <= 735 &&
-                        mouseX + xOffset >= 0 && mouseY + yOffset >= 0 && !select) {  //Checks if mouse is in the screen & in field image
+                        mouseX + xOffset >= 0 && mouseY + yOffset >= 0 && !select &&
+                        !currentlySelected.contains("Selected")) {  //Checks if mouse is in the screen & in field image
+                    motorNames.add(currentlySelected);
+                    if(!currentlySelected.contains("DCWheel")){
+                        motorExecutedLocation.add(circles.size() / 3);
+                    }
                     circles.add(mouseX);
                     circles.add(mouseY);
                     draw.setDimension(15, 15);
                     draw.backgroundTransparent(true);
                     draw.visibility(true);
                     draw.setColor("red");
+                    if (line) {
+                        draw.setLineSetting("straight");
+                    } else if (curve) {
+                        draw.setLineSetting("curve");
+                    }
                     draw.redraw();
                 }
             }
@@ -347,7 +561,6 @@ public class MainActivity extends JPanel {
     }
 
 
-
     private void createUIComponents() {
         // TODO: place custom component creation code here
     }
@@ -358,13 +571,29 @@ public class MainActivity extends JPanel {
         static boolean opaque = true;
         public static JPanel paintPanel;
         public static JPanel linePanel;
+        public static JPanel curvePanel;
         static boolean redrawCircle = false;
         static boolean redrawLine = false;
+        static boolean redrawCurve = false;
         static int loopStopper = 0;
         static int componentChecker = 0;
         static boolean isVisible = false;
         static boolean clear = false;
-        static int lineCreator = 0;
+        static int numOfIndexesRun = 0;
+        static int numTimes2Run = 0;
+        static int loopflag = 0;
+        static int lineInitVar = 0;
+        static int midX = 0;
+        static int midY = 0;
+        static int lineSetting = -100;
+        static int numTimes2Run2 = 0;
+        static int loopflag2 = 0;
+        static int lineInitVar2 = 0;
+        static ArrayList<Integer> xPoints = new ArrayList<>();
+        static ArrayList<Integer> yPoints = new ArrayList<>();
+        static ArrayList<Integer> xTemp = new ArrayList<>();
+        static ArrayList<Integer> yTemp = new ArrayList<>();
+        static ArrayList<Integer> getIndexes = new ArrayList<>();
 
         public static void setDimension(int width, int height) {        //Set width and height of circle
             wid = width;
@@ -373,6 +602,17 @@ public class MainActivity extends JPanel {
 
         public static void clearOldCircle() {       //If circle is moved manually with mouse, old circle is cleared
             clear = true;
+        }
+
+        public static void setLineSetting(String setting) {
+            if (setting.equalsIgnoreCase("straight")) {
+                lineSetting = 0;
+            } else if (setting.equalsIgnoreCase("curve")) {
+                lineSetting = 1;
+            } else {
+                lineSetting = -100;
+                System.out.println("Error: Setting '" + setting + "' does not exist.");
+            }
         }
 
         public static void visibility(boolean visible) {  //Change visibility of circle
@@ -389,7 +629,13 @@ public class MainActivity extends JPanel {
 
         public static void redraw() {  //Repaints the dot
             redrawCircle = true;
-            redrawLine = true;
+            if (lineSetting == 0) {
+                redrawLine = true;
+            } else if (lineSetting == 1) {
+                redrawCurve = true;
+            } else if (lineSetting == -100) {
+                System.out.println("Error: Invalid Line Setting! (lineSetting index = " + lineSetting + ")");
+            }
         }       //Allows paintComponent method to refresh after runtime
 
         public static void setColor(String color) {  //Adds color choice to ArrayList of circles (Once again not very efficient)
@@ -421,6 +667,7 @@ public class MainActivity extends JPanel {
         public static void showAllCirclesAndLines(JLayeredPane lp) {
             loopStopper = 0;
             componentChecker = 0;
+            numOfIndexesRun = 0;
             while (loopStopper < circles.size() / 3) {      //Loops until all circles in ArrayList have been drawn
                 paintPanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
                     @Override
@@ -482,36 +729,240 @@ public class MainActivity extends JPanel {
                 componentChecker = componentChecker + 3;
                 index = index + 1;
             }
-            lineCreator = 0;
-            while (circles.size() / 3 >= 2 && circles.size() > lineCreator + 6) {
-                System.out.println("size = " + circles.size() + " variable = " + lineCreator);
+            if (lineSetting == 0) {
+                initStraightLines(lp);
+            } else if (lineSetting == 1) {
+                initCurvedLines(lp);
+            } else if (lineSetting == -100) {
+                System.out.println("Error: Invalid Line Setting! (lineSetting index = " + lineSetting + ")");
+            }
+        }
+
+        public static void initStraightLines(JLayeredPane lp) {
+            numTimes2Run = 0;
+            loopflag = 0;
+            lineInitVar = 0;
+            if (circles.size() / 3 == 0 || circles.size() / 3 == 1) {
+                numTimes2Run = -100;
+            } else {
+                numTimes2Run = circles.size() / 3 - 1;
+            }
+            while (loopflag < numTimes2Run) {
                 linePanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
                     @Override
                     public void paintComponent(Graphics g) {  //Draws circle over JPanel
                         super.paintComponent(g);
-                        linePanel.setOpaque(false);
+                        linePanel.setOpaque(opaque);
                         linePanel.setVisible(isVisible);
                         Graphics2D g2ds = (Graphics2D) g;
                         g2ds.setColor(Color.BLACK);
-                        System.out.println("var = " + lineCreator);
-                        //g2ds.drawLine(circles.get(lineCreator)+xOffset, circles.get(lineCreator + 1)+yOffset,
-                        //        circles.get(lineCreator + 3)+xOffset, circles.get(lineCreator + 4)+yOffset);
-                        Line2D.Double line = new Line2D.Double(circles.get(lineCreator)+xOffset, circles.get(lineCreator + 1)+yOffset,
-                                circles.get(lineCreator + 3)+xOffset, circles.get(lineCreator + 4)+yOffset);
-                        g2ds.fill(line);
-                        g2ds.draw(line);
+                        try {
+                            Line2D.Double line = new Line2D.Double(circles.get(lineInitVar) + xOffset,
+                                    circles.get(lineInitVar + 1) + yOffset, circles.get(lineInitVar + 3) + xOffset,
+                                    circles.get(lineInitVar + 4) + yOffset);
+                            g2ds.fill(line);
+                            g2ds.draw(line);
+                        } catch (Exception e) {
+                        }
                     }
                 };
-                if(redrawLine){
+                linePanel.setOpaque(opaque);
+                if (redrawLine) {
                     linePanel.repaint();
                     redrawLine = false;
                 }
-                linePanel.setOpaque(false);
-                System.out.println("var2 = " + lineCreator);
-                linePanel.setBounds(0,0,2000,2000);
-                lp.add(linePanel, index, 0);
-                index = index + 1;
-                lineCreator = lineCreator + 3;
+                //System.out.println(loopflag + " < " + numTimes2Run + ", circles.get(" + lineInitVar + ", " + (lineInitVar + 1) +
+                //        ", " + (lineInitVar + 3) + ", " + (lineInitVar + 4) + ")");
+                try {
+                    if (lineSettingsAndParameters.get(0).get(loopflag).equals("straight")) {
+                        //cmdLine.debugger.dispVar("lineSettingsAndParamters.get(0)", lineSettingsAndParameters.get(0), -1, "straight");
+                        xTemp.clear();
+                        xTemp.add(circles.get(lineInitVar) + xOffset);
+                        xTemp.add(circles.get(lineInitVar + 3) + xOffset);
+                        int panelXCord = Collections.max(xTemp);
+                        yTemp.clear();
+                        yTemp.add(circles.get(lineInitVar + 1) + yOffset);
+                        yTemp.add(circles.get(lineInitVar + 4) + yOffset);
+                        int panelYCord = Collections.max(yTemp);
+                        cmdLine.debugger.dispVar("panelXCords", panelXCord);
+                        cmdLine.debugger.dispVar("panelYCords", panelYCord);
+                        curvePanel.setBounds(0, 0, panelXCord, panelYCord);
+                        lp.add(curvePanel, index, 0);
+                        index = index + 1;
+                    }
+                } catch (Exception e) {
+                }
+                //System.out.println((circles.size() / 3 - 2) + " == " + loopflag2 + ", " + settings.size() + " < " + (circles.size() / 3 - 1));
+                if (circles.size() / 3 - 2 == loopflag && settings.size() < circles.size() / 3 - 1) {
+                    settings.add("straight");
+                    params1.add(String.valueOf(circles.get(circles.size() - 6)));
+                    params1.add(String.valueOf(circles.get(circles.size() - 5)));
+                    params2.add("N/A");
+                    params2.add("N/A");
+                    params3.add(String.valueOf(circles.get(circles.size() - 3)));
+                    params3.add(String.valueOf(circles.get(circles.size() - 2)));
+                }
+                //cmdLine.debugger.viewAllComponents(lp);
+                loopflag = loopflag + 1;
+                lineInitVar = lineInitVar + 3;
+            }
+            lineSettingsAndParameters.clear();
+            lineSettingsAndParameters.add(settings);
+            lineSettingsAndParameters.add(params1);
+            lineSettingsAndParameters.add(params2);
+            lineSettingsAndParameters.add(params3);
+            if (lineSettingsAndParameters.get(0).contains("curve")) {
+                if (lineTypesLooped > 0) {
+                    lineTypesLooped = 0;
+                } else if (lineTypesLooped == 0) {
+                    lineTypesLooped = lineTypesLooped + 1;
+                    initCurvedLines(lp);
+                }
+            }
+        }
+
+        public static void initCurvedLines(JLayeredPane lp) {
+            numTimes2Run2 = 0;
+            loopflag2 = 0;
+            lineInitVar2 = 0;
+            midX = 0;
+            midY = 0;
+            lineSettingsAndParameters.clear();
+            if (circles.size() / 3 == 0 || circles.size() / 3 == 1) {
+                numTimes2Run2 = -100;
+            } else {
+                numTimes2Run2 = circles.size() / 3 - 1;
+            }
+            while (loopflag2 < numTimes2Run2) {
+                try {
+                    if (circles.get(lineInitVar2) > circles.get(lineInitVar2 + 3)) {
+                        midX = (circles.get(lineInitVar2) - circles.get(lineInitVar2 + 3)) / 2 + circles.get(lineInitVar2 + 3);
+                    } else if (circles.get(lineInitVar2 + 3) > circles.get(lineInitVar2)) {
+                        midX = (circles.get(lineInitVar2 + 3) - circles.get(lineInitVar2)) / 2 + circles.get(lineInitVar2);
+                    } else if (circles.get(lineInitVar2).equals(circles.get(lineInitVar2 + 3))) {
+                        midX = circles.get(lineInitVar2);
+                    }
+                    if (circles.get(lineInitVar2 + 4) > circles.get(lineInitVar2 + 1)) {
+                        midY = (circles.get(lineInitVar2 + 4) - circles.get(lineInitVar2 + 1)) / 2 + circles.get(lineInitVar2 + 1);
+                    } else if (circles.get(lineInitVar2 + 1) > circles.get(lineInitVar2 + 4)) {
+                        midY = (circles.get(lineInitVar2 + 1) - circles.get(lineInitVar2 + 4)) / 2 + circles.get(lineInitVar2 + 4);
+                    } else if (circles.get(lineInitVar2 + 1).equals(circles.get(lineInitVar2 + 4))) {
+                        midY = circles.get(lineInitVar2 + 1);
+                    }
+                    midX = midX + xOffset;
+                    midY = midY + yOffset;
+                    if (circles.size() / 3 - 2 == loopflag2 && xPoints.size() / 3 < circles.size() - 1) {
+                        xPoints.add(circles.get(lineInitVar2) + xOffset);
+                        xPoints.add(midX-50);
+                        xPoints.add(circles.get(lineInitVar2 + 3) + xOffset);
+                    }
+                    if (circles.size() / 3 - 2 == loopflag2 && yPoints.size() / 3 < circles.size() - 1) {
+                        yPoints.add(circles.get(lineInitVar2 + 1) + yOffset);
+                        yPoints.add(midY-50);
+                        yPoints.add(circles.get(lineInitVar2 + 4) + yOffset);
+                    }
+                } catch (Exception e) {
+                }
+                curvePanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
+                    @Override
+                    public void paint(Graphics g) {
+                        super.paintComponent(g);
+                        Graphics2D g2d = (Graphics2D) g;
+                        g2d.setColor(Color.BLACK);
+                        GeneralPath curvedLine = new GeneralPath(GeneralPath.WIND_EVEN_ODD, xPoints.size());
+                        curvePanel.setOpaque(opaque);
+                        curvePanel.setVisible(isVisible);
+                        try {
+                            curvedLine.moveTo(xPoints.get(lineInitVar2), yPoints.get(lineInitVar2));
+                            curvedLine.curveTo(xPoints.get(lineInitVar2), yPoints.get(lineInitVar2), xPoints.get(lineInitVar2 + 1),
+                                    yPoints.get(lineInitVar2 + 1), xPoints.get(lineInitVar2 + 2), yPoints.get(lineInitVar2 + 2));
+                            curvedLine.closePath();
+                            g2d.draw(curvedLine);
+                        } catch (Exception e) {
+                        }
+                    }
+                };
+                curvePanel.setOpaque(opaque);
+                if (redrawCurve) {
+                    curvePanel.repaint();
+                    redrawCurve = false;
+                }
+                //System.out.println((circles.get(lineInitVar2) + xOffset) + ", " + (circles.get(lineInitVar2 + 1) + yOffset) + ", " +
+                //        midX + ", " + midY + ", " + (circles.get(lineInitVar2 + 3) + xOffset) + ", " + (circles.get(lineInitVar2 + 4) + yOffset));
+                getIndexes.clear();
+                getIndexes.add(0);
+                getIndexes.add(1);
+                getIndexes.add(2);
+                getIndexes.add(3);
+                cmdLine.debugger.dispVar("settings",settings,getIndexes,"N/A");
+                if (settings.size() < circles.size() / 3 && circles.size() / 3 >= 2 && loopflag2 == numTimes2Run2 - 1) {
+                    //System.out.println(loopflag2 + " < " + numTimes2Run2 + ", " + settings.size() + " < " + (circles.size() / 3 - 1));
+                    settings.add("curve");
+                    params1.add(String.valueOf(xPoints.get(lineInitVar2)));
+                    params1.add(String.valueOf(yPoints.get(lineInitVar2)));
+                    params2.add(String.valueOf(xPoints.get(lineInitVar2 + 1)));
+                    params2.add(String.valueOf(yPoints.get(lineInitVar2 + 1)));
+                    params3.add(String.valueOf(xPoints.get(lineInitVar2 + 2)));
+                    params3.add(String.valueOf(yPoints.get(lineInitVar2 + 2)));
+
+                    try {
+                        int zz = 0;
+                        cmdLine.debugger.dispVar("params1",params1,0,"N/A");
+                        while (params1.size() > zz) {
+                            String loopCondition = lineSettingsAndParameters.get(1).contains(params1.get(zz)) + "&&" +
+                                    lineSettingsAndParameters.get(2).contains(params2.get(zz)) + "&&" +
+                                    lineSettingsAndParameters.get(3).contains(params3.get(zz));
+                            cmdLine.debugger.conditionChecker(loopCondition,true);
+                            if (lineSettingsAndParameters.get(1).contains(params1.get(zz)) &&
+                                    lineSettingsAndParameters.get(2).contains(params2.get(zz)) &&
+                                    lineSettingsAndParameters.get(3).contains(params3.get(zz))) {
+                                lineSettingsAndParameters.get(1).remove(lineSettingsAndParameters.get(1).indexOf(params1.get(zz)));
+                                lineSettingsAndParameters.get(2).remove(lineSettingsAndParameters.get(2).indexOf(params2.get(zz)));
+                                lineSettingsAndParameters.get(3).remove(lineSettingsAndParameters.get(3).indexOf(params3.get(zz)));
+                            }
+                            zz = zz + 1;
+                        }
+                    } catch (Exception e){
+                    }
+
+                    lineSettingsAndParameters.add(settings);
+                    lineSettingsAndParameters.add(params1);
+                    lineSettingsAndParameters.add(params2);
+                    lineSettingsAndParameters.add(params3);
+                }
+                try {
+                    //System.out.println((circles.size() / 3 - 2) + " == " + loopflag2 + ", " + settings.size() + " < " + (circles.size() / 3 - 1));
+                    if (lineSettingsAndParameters.get(0).get(loopflag2).equals("curve")) {
+                        xTemp.clear();
+                        xTemp.add(xPoints.get(lineInitVar2));
+                        xTemp.add(xPoints.get(lineInitVar2 + 1));
+                        xTemp.add(xPoints.get(lineInitVar2 + 2));
+                        int panelXCord = Collections.max(xTemp);
+                        yTemp.clear();
+                        yTemp.add(yPoints.get(lineInitVar2));
+                        yTemp.add(yPoints.get(lineInitVar2 + 1));
+                        yTemp.add(yPoints.get(lineInitVar2 + 2));
+                        int panelYCord = Collections.max(yTemp);
+                        curvePanel.setBounds(0, 0, panelXCord, panelYCord);
+                        lp.add(curvePanel, index, 0);
+                        index = index + 1;
+                    }
+                } catch (Exception e) {
+                }
+                //cmdLine.debugger.viewAllComponents(lp);
+                loopflag2 = loopflag2 + 1;
+                lineInitVar2 = lineInitVar2 + 3;
+            }
+            try {
+                if (lineSettingsAndParameters.get(0).contains("straight")) {
+                    if (lineTypesLooped > 0) {
+                        lineTypesLooped = 0;
+                    } else if (lineTypesLooped == 0) {
+                        lineTypesLooped = lineTypesLooped + 1;
+                        initStraightLines(lp);
+                    }
+                }
+            } catch (Exception e) {
             }
         }
     }

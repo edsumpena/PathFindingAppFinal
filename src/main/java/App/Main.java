@@ -1,5 +1,6 @@
 package App;
 
+import App.Converters.FromAndToPose2D;
 import App.EditParameters.EditParametersActivity;
 
 import javax.swing.*;
@@ -21,9 +22,11 @@ public class Main {
         JFrame frame = new JFrame("Pathfinding");  //Create and set up the window.
         MainActivity newContentPane = new MainActivity();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        EditParametersActivity editParametersActivity = new EditParametersActivity();
+        //EditParametersActivity editParametersActivity = new EditParametersActivity();
         newContentPane.setOpaque(false);
         frame.setContentPane(newContentPane);
+
+        FromAndToPose2D.setCanvasSize(750.0);
 
         MainActivity.mouse.initListener(frame);
         MainActivity.key.initListener(frame);
