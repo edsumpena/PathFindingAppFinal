@@ -40,6 +40,13 @@ public class helloWorld extends JComponent {
         circles.add(400);
         circles.add(400);
 
+        lines.add(27);
+        lines.add(354);
+        lines.add(122);
+        lines.add(85);
+        lines.add(232);
+        lines.add(17);
+
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         JLayeredPane layeredPane = new JLayeredPane();
         //setLayout(new LayeredPaneManager(layeredPane));
@@ -64,7 +71,7 @@ public class helloWorld extends JComponent {
         layeredPane.add(button, new Integer(1), 0);
         layeredPane.add(label2, new Integer(2), 0);
         showAllCircles.loop(layeredPane);
-        init.curvedLines(layeredPane);
+        //init.curvedLines(layeredPane);
         add(layeredPane);
         button.addActionListener(new ActionListener() {  //Button onClickListener
             @Override
@@ -78,38 +85,80 @@ public class helloWorld extends JComponent {
         public static JPanel paintPanel;
         static int x = 0;
         static int y = 0;
+        static int numTimesRun = 0;
 
         public static void loop(JLayeredPane lp) {
-            while (x < circles.size() / 2) {
-                paintPanel = new JPanel() {
-                    @Override
-                    public void paintComponent(Graphics g) {
-                        super.paintComponent(g);
-                        Graphics2D g2ds = (Graphics2D) g;
-                        Ellipse2D.Double circle = new Ellipse2D.Double(0, 0, 10, 10);
-                        paintPanel.setOpaque(true);
-                        g2ds.setColor(Color.BLUE);
-                        g2ds.fill(circle);
-                        g2ds.draw(circle);
-                        System.out.println("circleDrawed");
-                    }
-                };
-                paintPanel.setBounds(circles.get(y), circles.get(y + 1), 10, 10);
-                lp.add(paintPanel, new Integer(x + 4), 0);
-                //System.out.println(lp.getComponent(0));
-                x = x + 1;
-                y = y + 2;
-                if (circles.size() >= 4) {
-                    while (lines.size() < 4) {
-                        lines.add(null);
-                    }
-                    lines.set(0, circles.get(circles.size() - 4));
-                    lines.set(1, circles.get(circles.size() - 3));
-                    lines.set(2, circles.get(circles.size() - 2));
-                    lines.set(3, circles.get(circles.size() - 1));
-                    //drawLines.create(lp);
-                }
+            if (circles.size() / 3 == 0 || circles.size() / 3 == 1) {
+                numTimesRun = -100;
+            } else {
+                numTimesRun = circles.size() / 3 - 1;
             }
+            paintPanel = new JPanel() {
+                @Override
+                public void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    x = 0;
+                    y = 0;
+                    //Graphics2D g2ds = (Graphics2D) g;
+                    while (x < circles.size() / 2) {
+                        g.setColor(Color.BLUE);
+                        g.fillOval(circles.get(y), circles.get(y + 1), 15, 15);
+                        x = x + 1;
+                        y = y + 2;
+                    }
+                    try {
+                        int i = 0;
+                        while (i < 2) {
+                            if(i == 0)
+                            g.drawPolyline(extractX(circles, 2), extractY(circles, 2), circles.size() / 2);
+                            else if(i == 1)
+                            g.drawPolyline(extractX(lines, 2), extractY(lines, 2), lines.size() / 2);
+                            i+=1;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("circleDrawed");
+                }
+            };
+            paintPanel.setOpaque(false);
+            paintPanel.setBounds(0, 0, 2000, 2000);
+            lp.add(paintPanel, 10, 0);
+            //System.out.println(lp.getComponent(0));
+        }
+
+        public static int[] extractX(ArrayList<Integer> circles, int valsPerCircle) {
+            ArrayList<Integer> xVals = new ArrayList<>();
+            int i = 0;
+            while (circles.size() > i) {
+                xVals.add(circles.get(i));
+                i += valsPerCircle;
+            }
+
+            int[] xValToArray = new int[xVals.size()];
+            i = 0;
+            while (xVals.size() > i) {
+                xValToArray[i] = xVals.get(i);
+                i += 1;
+            }
+            return xValToArray;
+        }
+
+        public static int[] extractY(ArrayList<Integer> circles, int valsPerCircle) {
+            ArrayList<Integer> xVals = new ArrayList<>();
+            int i = 0;
+            while (circles.size() > i) {
+                xVals.add(circles.get(i + 1));
+                i += valsPerCircle;
+            }
+
+            int[] xValToArray = new int[xVals.size()];
+            i = 0;
+            while (xVals.size() > i) {
+                xValToArray[i] = xVals.get(i);
+                i += 1;
+            }
+            return xValToArray;
         }
     }
 
@@ -152,89 +201,6 @@ public class helloWorld extends JComponent {
             lp.add(linePanel, 20, 0);
             viewAllComponents(lp);
 
-        }
-    }
-
-    public static class init extends JPanel {
-        static int numTimes2Run2 = 0;
-        static int loopflag2 = 0;
-        static int lineInitVar2 = 0;
-        static int midX = 0;
-        static int midY = 0;
-        static int index = 0;
-        public static JPanel curvePanel;
-
-        public static void curvedLines(JLayeredPane lp) {
-            numTimes2Run2 = 0;
-            loopflag2 = 0;
-            lineInitVar2 = 0;
-            midX = 0;
-            midY = 0;
-            index = 25;
-            if (circles.size() / 2 == 0 || circles.size() / 2 == 1) {
-                numTimes2Run2 = -100;
-            } else {
-                numTimes2Run2 = circles.size() / 2 - 1;
-            }
-            while (loopflag2 < numTimes2Run2) {
-                try {
-                    if (circles.get(lineInitVar2) > circles.get(lineInitVar2 + 2)) {
-                        midX = (circles.get(lineInitVar2) - circles.get(lineInitVar2 + 2)) / 2 + circles.get(lineInitVar2 + 2);
-                    } else if (circles.get(lineInitVar2 + 2) > circles.get(lineInitVar2)) {
-                        midX = (circles.get(lineInitVar2 + 2) - circles.get(lineInitVar2)) / 2 + circles.get(lineInitVar2);
-                    } else if (circles.get(lineInitVar2).equals(circles.get(lineInitVar2 + 2))) {
-                        midX = circles.get(lineInitVar2);
-                    }
-                    if (circles.get(lineInitVar2 + 3) > circles.get(lineInitVar2 + 1)) {
-                        midY = (circles.get(lineInitVar2 + 3) - circles.get(lineInitVar2 + 1)) / 2 + circles.get(lineInitVar2 + 1);
-                    } else if (circles.get(lineInitVar2 + 1) > circles.get(lineInitVar2 + 3)) {
-                        midY = (circles.get(lineInitVar2 + 1) - circles.get(lineInitVar2 + 3)) / 2 + circles.get(lineInitVar2 + 3);
-                    } else if (circles.get(lineInitVar2 + 1).equals(circles.get(lineInitVar2 + 3))) {
-                        midY = circles.get(lineInitVar2 + 1);
-                    }
-                } catch (Exception e) {
-                }
-                curvePanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
-                    @Override
-                    public void paint(Graphics g) {
-                        super.paintComponent(g);
-                        Graphics2D g2d = (Graphics2D) g;
-                        g2d.setColor(Color.BLACK);
-                        Path2D shape = new Path2D.Double();
-                        curvePanel.setOpaque(false);
-                        curvePanel.setVisible(true);
-                        try {
-                            shape.curveTo(circles.get(lineInitVar2), circles.get(lineInitVar2 + 1),
-                                    midX, midY, circles.get(lineInitVar2 + 2), circles.get(lineInitVar2 + 3));
-                            shape.closePath();
-                            g2d.draw(shape);
-                        } catch (Exception e) {
-                        }
-                    }
-                };
-                curvePanel.setOpaque(false);
-                try {
-                    System.out.println((circles.get(lineInitVar2)) + ", " + (circles.get(lineInitVar2 + 1)) + ", " +
-                            midX + ", " + midY + ", " + (circles.get(lineInitVar2 + 2)) + ", " + (circles.get(lineInitVar2 + 3)));
-                    System.out.println(loopflag2 + " < " + numTimes2Run2 + ", circles.get(" + lineInitVar2 + ", " + (lineInitVar2 + 1) +
-                            ", " + (lineInitVar2 + 2) + ", " + (lineInitVar2 + 3) + ")");
-                    if (circles.get(lineInitVar2 + 3) > circles.get(lineInitVar2 + 1)) {
-                        curvePanel.setBounds(0, 0,
-                                circles.get(lineInitVar2 + 2), circles.get(lineInitVar2 + 3));
-                        lp.add(curvePanel, index, 0);
-                        index = index + 1;
-                    } else {
-                        curvePanel.setBounds(0, 0,
-                                circles.get(lineInitVar2), circles.get(lineInitVar2 + 1));
-                        lp.add(curvePanel, index, 0);
-                        index = index + 1;
-                    }
-                } catch (Exception e) {
-                }
-                //viewAllComponents(lp);
-                loopflag2 = loopflag2 + 1;
-                lineInitVar2 = lineInitVar2 + 2;
-            }
         }
     }
 

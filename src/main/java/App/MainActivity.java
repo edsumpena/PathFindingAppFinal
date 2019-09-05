@@ -19,6 +19,7 @@ import App.Debugger.cmdLine;
 import App.ReadingAndWriting.MotorSetup;
 import App.ReadingAndWriting.SerializeAndDeserialize;
 import App.ReadingAndWriting.ZipAndUnzip;
+import App.Wrappers.DriverConstraintsWrapper;
 import App.Wrappers.TrajBuilderWrapper;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
@@ -61,7 +62,8 @@ public class MainActivity extends JPanel {
     static ArrayList<String> params3 = new ArrayList<>();
     static ArrayList<Integer> motorExecutedLocation = new ArrayList<>();
     static ArrayList<String> motorNames = new ArrayList<>();
-    static String currentlySelected = "";
+    static String pathName = "untitled path";
+    static String currentlySelected = "[Select]";
     static int z = 0;
     static int v = 0;
     static int index = 9;
@@ -194,7 +196,7 @@ public class MainActivity extends JPanel {
         JComboBox jComboBox2 = new JComboBox();  //Dropdown box creator for Motor Options
         jComboBox2.addItem("[Select]");  //Dropdown options for Motor Options
         cmdLine.debugger.dispVar("motors",MotorSetup.importMotors().get(0),0,"N/A");
-        if(!MotorSetup.importMotors().get(0).get(0).contains("Error")){
+        if(!MotorSetup.importMotors().get(0).get(0).contains("Error")){     //Imports list of motors & motor types
             int i = 0;
             while (MotorSetup.importMotors().size() >= i){
                 jComboBox2.addItem(MotorSetup.importMotors().get(0).get(i) + " (" + MotorSetup.importMotors().get(1).get(i) + ")");
@@ -210,11 +212,11 @@ public class MainActivity extends JPanel {
         button.setBounds(925, 200, 200, 50);
         button.setFocusable(false);
 
-        JButton saveButton = new JButton("Save Path");
+        JButton saveButton = new JButton("Save Path");  //Creates a .path folder to save path data (only compatible with GUI)
         saveButton.setBounds(1100, 400, 100,35);
         saveButton.setFocusable(false);
 
-        JButton openPathButton = new JButton("Open Path");
+        JButton openPathButton = new JButton("Open Path");  //Opens and reads .path folder data
         openPathButton.setBounds(850, 400, 100,35);
         openPathButton.setFocusable(false);
 
@@ -227,10 +229,11 @@ public class MainActivity extends JPanel {
 
         button.addActionListener(new ActionListener() {  //Button onClickListener
             @Override
-            public void actionPerformed(ActionEvent arg0) {
+            public void actionPerformed(ActionEvent arg0) {     //Encodes TrajectoryBuilder, Motor Names, and Motor locations in Base64
                 try {
-                    TrajectoryBuilder driveTraj = TrajBuilderWrapper.getWheelTrajectoryBuilder(FromAndToPose2D.pointsToPose2d(circles,
-                            0,1,3), motorNames);
+                    TrajBuilderWrapper driveTraj = new TrajBuilderWrapper(FromAndToPose2D.pointsToPose2d(circles,
+                            0,1,3), lineSettingsAndParameters.get(0),
+                            DriverConstraintsWrapper.getDriveConstraints(),pathName);
                     String motors = objectMapper.writeValueAsString(motorNames);
                     String moveMotorLocation = objectMapper.writeValueAsString(motorExecutedLocation);
                     String trajectory = objectMapper.writeValueAsString(driveTraj);
@@ -238,39 +241,44 @@ public class MainActivity extends JPanel {
                     String encodedLoc = Base64.getEncoder().encodeToString(moveMotorLocation.getBytes());
                     String encodedMotors = Base64.getEncoder().encodeToString(motors.getBytes());
                     tf.setText("TRAJ:" + encodedTraj + ",MOTORS;" + encodedMotors + ",LOCATION-" + encodedLoc);
+                    System.out.println("cool");
                 }
                 catch (Exception e){
                     System.err.println(e.toString());
                 }
             }
         });
-        openPathButton.addActionListener(new ActionListener() {  //Button onClickListener
+        openPathButton.addActionListener(new ActionListener() {  //Open Button onClickListener
             @Override
             public void actionPerformed(ActionEvent arg0) {
                 JFileChooser fileChooser = new JFileChooser();
                 fileChooser.setDialogTitle("Open Path");
                 fileChooser.setPreferredSize(new Dimension(800,600));
                 fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                fileChooser.removeChoosableFileFilter(fileChooser.getFileFilter());  //remove the default file filter
+                fileChooser.removeChoosableFileFilter(fileChooser.getFileFilter());  //Remove the default "All Files" filter
                 FileFilter filter = new FileNameExtensionFilter("PATH file", "path");
-                fileChooser.addChoosableFileFilter(filter); //add PATH file filter
+                fileChooser.addChoosableFileFilter(filter); //Add .path file type filter
 
                 if(prevFilePath != null){
                     fileChooser.setCurrentDirectory(prevFilePath);
                 }
                 int result = fileChooser.showOpenDialog(layeredPane);
-                if (result == JFileChooser.APPROVE_OPTION) {
+                if (result == JFileChooser.APPROVE_OPTION) {    //Save button is pressed
                     File fileToRead = fileChooser.getSelectedFile();
+                    if (String.valueOf(fileToRead).contains(".path")) {
+                        currentlySelected = String.valueOf(fileToRead).substring(String.valueOf(fileToRead).lastIndexOf("\\") + 1,
+                                String.valueOf(fileToRead).indexOf("."));
+                    }
                     System.out.println(fileToRead);
                     ZipAndUnzip.unzipFolder(String.valueOf(fileToRead), String.valueOf(fileChooser.getCurrentDirectory()));
                     String name = String.valueOf(fileToRead).substring(String.valueOf(fileToRead).lastIndexOf("\\") + 1,
                             String.valueOf(fileToRead).indexOf("."));
-                    String cirDir = fileChooser.getCurrentDirectory() + "\\" + name + "Circles.cir";
-                    String lineDir = fileChooser.getCurrentDirectory() + "\\" + name + "Traj.line";
-                    circles = SerializeAndDeserialize.deserialize(cirDir,false);
-                    lineSettingsAndParameters = SerializeAndDeserialize.deserialize(lineDir,true);
+                    String cirDir = fileChooser.getCurrentDirectory() + "\\" + name + "Circles.cir";    //Sets .cir file containing serialized circle array as current directory
+                    String lineDir = fileChooser.getCurrentDirectory() + "\\" + name + "Traj.line";     //Sets .line file containing serialized line array as current directory
+                    circles = SerializeAndDeserialize.deserialize(cirDir,false);    //Gets deserialized ArrayList and defines variable
+                    lineSettingsAndParameters = SerializeAndDeserialize.deserialize(lineDir,true);  //Deserializes the arrays (see SerializeAndDeserialize class)
                     ZipAndUnzip.deleteAndOrRename(cirDir,"","",true,false);
-                    ZipAndUnzip.deleteAndOrRename(lineDir,"","",true,false);
+                    ZipAndUnzip.deleteAndOrRename(lineDir,"","",true,false);    //Deletes temporary files
                     prevFilePath = fileChooser.getCurrentDirectory();
                     ArrayList<Integer> indexTempVals = new ArrayList<>();
                     indexTempVals.add(0);
@@ -279,26 +287,26 @@ public class MainActivity extends JPanel {
                     indexTempVals.add(3);
                     indexTempVals.add(4);
                     indexTempVals.add(5);
-                    cmdLine.debugger.dispVar("circles",circles,indexTempVals,-1000);
+                    cmdLine.debugger.dispVar("circles",circles,indexTempVals,-1000);    //Debugger- Displays variables in the console with a much more readable fashion
                     cmdLine.debugger.dispVar("lineSettingsAndParameters.get(0)",lineSettingsAndParameters.get(0),indexTempVals,"N/A");
                     cmdLine.debugger.dispVar("lineSettingsAndParameters.get(1)",lineSettingsAndParameters.get(1),indexTempVals,"N/A");
                     cmdLine.debugger.dispVar("lineSettingsAndParameters.get(2)",lineSettingsAndParameters.get(2),indexTempVals,"N/A");
-                } else if (result == JFileChooser.CANCEL_OPTION) {
+                } else if (result == JFileChooser.CANCEL_OPTION) {      //If cancel button is pressed
                     prevFilePath = fileChooser.getCurrentDirectory();
-                } else if (result == JFileChooser.ERROR_OPTION) {
+                } else if (result == JFileChooser.ERROR_OPTION) {       //If X button is pressed
                     prevFilePath = fileChooser.getCurrentDirectory();
                 }
             }
         });
-        saveButton.addActionListener(new ActionListener() {  //Button onClickListener
+        saveButton.addActionListener(new ActionListener() {  //Save Button onClickListener
             @Override
             public void actionPerformed(ActionEvent arg0) {
                 JFileChooser fileChooser = new JFileChooser(){
                 };
                 fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                fileChooser.removeChoosableFileFilter(fileChooser.getFileFilter());  //remove the default file filter
+                fileChooser.removeChoosableFileFilter(fileChooser.getFileFilter());  //Remove the default "All Files" filter
                 FileFilter filter = new FileNameExtensionFilter("PATH file", "path");
-                fileChooser.addChoosableFileFilter(filter); //add PATH file filter
+                fileChooser.addChoosableFileFilter(filter); //Add .path file type filter
 
                 fileChooser.setDialogTitle("Save Path");
                 fileChooser.setPreferredSize(new Dimension(800,600));
@@ -308,21 +316,22 @@ public class MainActivity extends JPanel {
                 }
                 String fileNoExt = "";
                 int userSelection = fileChooser.showSaveDialog(layeredPane);
-                if (userSelection == JFileChooser.APPROVE_OPTION) {
+                if (userSelection == JFileChooser.APPROVE_OPTION) {     //Save Button is pressed
                     File f = fileChooser.getSelectedFile();
-                    if(!String.valueOf(f).contains(".path")){
-                        int dialogButton = JOptionPane.ERROR_MESSAGE;
+                    if(!String.valueOf(f).contains(".path")){   //If file name does not contain .path
+                        int dialogButton = JOptionPane.ERROR_MESSAGE;   //Error message pops up
                         JOptionPane.showMessageDialog(null, "Error: File must contain '.path' extension","Error",dialogButton);
-                    } else if(f.exists()){
+                    } else if(f.exists()){  //If file name already exists
                         int dialogButton2 = JOptionPane.YES_NO_OPTION;
                         int dialogResult = JOptionPane.showConfirmDialog (null,
-                                "File Already Exists! Do you want to Replace?","File Exists",dialogButton2);
+                                "File Already Exists! Do you want to Replace?","File Exists",dialogButton2);    //Ask if user wants to replace file
                         if(dialogResult == JOptionPane.YES_OPTION){
                             f.setExecutable(false);
                             f.setReadable(true);
                             f.setWritable(true);
                             f.delete();
-                            File fileToSave = fileChooser.getSelectedFile();
+                            currentlySelected = String.valueOf(f);
+                            File fileToSave = fileChooser.getSelectedFile();    //Selects the duplicate file, deletes it, and create new files
                             fileChooser.setCurrentDirectory(fileChooser.getSelectedFile());
                             if (String.valueOf(fileToSave).contains(".path")) {
                                 fileNoExt = String.valueOf(fileToSave).substring(String.valueOf(fileToSave).lastIndexOf("\\") + 1,
@@ -333,21 +342,22 @@ public class MainActivity extends JPanel {
                                     fileNoExt);
                             ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(),fileNoExt);
                         }
-                    } else {
-                        File fileToSave = fileChooser.getSelectedFile();
+                    } else {    //If not a duplicate file name and contains .path ext in the name
+                        File fileToSave = fileChooser.getSelectedFile();    //Saves the files
                         if (String.valueOf(fileToSave).contains(".path")) {
                             fileNoExt = String.valueOf(fileToSave).substring(String.valueOf(fileToSave).lastIndexOf("\\") + 1,
                                     String.valueOf(fileToSave).indexOf("."));
                         }
                         prevFilePath = fileChooser.getCurrentDirectory();
+                        currentlySelected = fileNoExt;
                         SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, String.valueOf(fileToSave),
                                 fileNoExt);
 
                         ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(),fileNoExt);
                     }
-                } else if (userSelection == JFileChooser.CANCEL_OPTION) {
+                } else if (userSelection == JFileChooser.CANCEL_OPTION) {   //Cancel button is pressed
                     prevFilePath = fileChooser.getCurrentDirectory();
-                } else if (userSelection == JFileChooser.ERROR_OPTION) {
+                } else if (userSelection == JFileChooser.ERROR_OPTION) {    // X button is pressed
                     prevFilePath = fileChooser.getCurrentDirectory();
                 }
             }
@@ -380,13 +390,13 @@ public class MainActivity extends JPanel {
         public void itemStateChanged(ItemEvent event) {  //Which dropdown option is selected for Drive Options?
             if (event.getStateChange() == ItemEvent.SELECTED) {
                 Object item = event.getItem();
-                if (String.valueOf(item).equals("Line")) {
+                if (String.valueOf(item).equals("Line")) {      //Robot moves in straight line
                     line = true;
                     select = false;
                     curve = false;
                     strafe = false;
                     reverse = false;
-                } else if (String.valueOf(item).equals("Curve")) {
+                } else if (String.valueOf(item).equals("Curve")) {      //Robot turns to a location
                     curve = true;
                     line = false;
                     select = false;
@@ -398,13 +408,13 @@ public class MainActivity extends JPanel {
                     curve = false;
                     strafe = false;
                     reverse = false;
-                } else if (String.valueOf(item).equals("Reverse")){
+                } else if (String.valueOf(item).equals("Reverse")){     //Robot backs up to a location
                     line = false;
                     select = false;
                     curve = false;
                     strafe = false;
                     reverse = true;
-                } else if(String.valueOf(item).equals("Strafe")){
+                } else if(String.valueOf(item).equals("Strafe")){       //Robot strafes to a location (mechinum wheels only)
                     line = false;
                     select = false;
                     curve = false;
@@ -425,13 +435,14 @@ public class MainActivity extends JPanel {
                 }
                 if(!MotorSetup.importMotors().get(0).get(0).contains("Error")) {
                     int i = 0;
-                    while (MotorSetup.importMotors().get(0).size() >= i) {
-                        if (MotorSetup.importMotors().get(0).get(i).equals(String.valueOf(item))){
+                    while (MotorSetup.importMotors().get(0).size() > i) {      //Gets which motor is selected
+                        if (String.valueOf(item).contains(MotorSetup.importMotors().get(0).get(i))){
                             currentlySelected = MotorSetup.importMotors().get(0).get(i);
                         }
                         i += 1;
                     }
                 }
+                System.out.println(currentlySelected);
             }
         }
     }
@@ -520,7 +531,7 @@ public class MainActivity extends JPanel {
                 gPressed = false;
                 if (!mouseExited && mouseX + xOffset <= 735 && mouseY + yOffset <= 735 &&
                         mouseX + xOffset >= 0 && mouseY + yOffset >= 0 && !select &&
-                        !currentlySelected.contains("Selected")) {  //Checks if mouse is in the screen & in field image
+                        !currentlySelected.contains("Select")) {  //Checks if mouse is in the screen & in field image
                     motorNames.add(currentlySelected);
                     if(!currentlySelected.contains("DCWheel")){
                         motorExecutedLocation.add(circles.size() / 3);

@@ -17,9 +17,11 @@ public class FromAndToPose2D {
         int i = 0;
         while(points.size() > i){
             try {
-                pose2ds.add(canvasToFieldSpace(Double.valueOf(points.get(i + firstXIndex)), Double.valueOf(points.get(i + firstYIndex))));
+                pose2ds.add(canvasToFieldSpace(Double.valueOf(points.get(i + firstXIndex)), Double.valueOf(points.get(i + firstYIndex)),
+                        Double.valueOf(points.get(i + 3 + firstXIndex)), Double.valueOf(points.get(i + 3 + firstYIndex))));
             } catch (Exception e){
-                e.printStackTrace();
+                pose2ds.add(canvasToFieldSpace(Double.valueOf(points.get(i + firstXIndex)), Double.valueOf(points.get(i + firstYIndex)),
+                        -1000,-1000));
                 break;
             }
             i += valsPerCircle;
@@ -36,6 +38,9 @@ public class FromAndToPose2D {
             i += 3;
         }
         return points;
+    }
+    public static double getHeading(double x1, double y1, double x2, double y2){    //https://math.stackexchange.com/questions/1596513/find-the-bearing-angle-between-two-points-in-a-2d-space
+        return Math.atan2(x2 - x1, y1 - y2);
     }
 
 //---------------------------------------------------------------------------------------------------------
@@ -58,15 +63,19 @@ public class FromAndToPose2D {
 
 //---------------------------------------------------------------------------------------------------------
 
-    public static Pose2d canvasToFieldSpace(double vectorX, double vectorY) {
+    public static Pose2d canvasToFieldSpace(double vectorX, double vectorY, double headingX, double headingY) {
         double fieldY = -(vectorX - CANVAS_SIZE / 2.0) * (255.0 / CANVAS_SIZE);  //255.0 or 144.0?
         double fieldX = -(vectorY - CANVAS_SIZE / 2.0) * (255.0 / CANVAS_SIZE);
-        return new Pose2d(fieldX, fieldY, 0);
+        double heading = 0;
+        if(headingX != -1000 && headingY != -1000) {
+            heading = getHeading(vectorX, vectorY, headingX, headingY);
+        }
+        return new Pose2d(fieldX, fieldY, heading);
     }
     public static double[] fieldToCanvasSpace(Pose2d pose) {
         double canvasY = -(pose.getX() * (CANVAS_SIZE / 255.0)) + CANVAS_SIZE / 2.0;
         double canvasX = -(pose.getY() * (CANVAS_SIZE / 255.0)) + CANVAS_SIZE / 2.0;
-        double[] returnVals = {canvasX,canvasY};
+        double[] returnVals = {canvasX,canvasY,pose.getHeading()};
         return returnVals;
     }
     public static void setCanvasSize(double size){
