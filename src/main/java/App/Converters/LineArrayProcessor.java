@@ -1,5 +1,7 @@
 package App.Converters;
 
+import App.MainActivity;
+
 import java.util.ArrayList;
 
 public class LineArrayProcessor {
@@ -74,7 +76,7 @@ public class LineArrayProcessor {
         int i = 0;
         while (circles.size() > i) {
             try {
-                xVals.add(circles.get(i));
+                xVals.add(circles.get(i) + MainActivity.xOffset);
             } catch (Exception e) {
             }
             i += valsPerCircleX;
@@ -94,7 +96,7 @@ public class LineArrayProcessor {
         int i = 0;
         while (circles.size() > i) {
             try {
-                yVals.add(circles.get(i + 1));
+                yVals.add(circles.get(i + 1) + MainActivity.yOffset);
             } catch (Exception e) {
             }
             i += valsPerCircleY;

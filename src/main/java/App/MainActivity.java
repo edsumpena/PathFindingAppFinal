@@ -55,8 +55,8 @@ public class MainActivity extends JPanel {
     static boolean mouseExited = true;
     static boolean mouseClicked = false;
     static boolean mouseClickedFocus = false;
-    static int xOffset = -15;
-    static int yOffset = -40;
+    public static int xOffset = -15;
+    public static int yOffset = -40;
     static ArrayList<Integer> circles = new ArrayList<>();
     static ArrayList<ArrayList<String>> lineSettingsAndParameters = new ArrayList<>();
     static ArrayList<String> settings = new ArrayList<>();
@@ -69,12 +69,16 @@ public class MainActivity extends JPanel {
     static String currentlySelected = "[Select]";
     static int z = 0;
     static int v = 0;
+    static int z2 = 0;
+    static int v2 = 0;
+    static boolean selected = false;
     static int index = 9;
     static int clearX = 0;
     static int clearY = 0;
-    static int lineTypesLooped = 0;
     static File prevFilePath;
     static ObjectMapper objectMapper = new ObjectMapper();
+    static int selectedColor = -1;
+    static int prevCircle = -1;
 
     public static class threads extends Thread {    //Threads to house infinite loops
         static boolean unstoppable = true;
@@ -365,9 +369,9 @@ public class MainActivity extends JPanel {
             }
         });
 
-        draw.backgroundTransparent(false);  //Change settings of the Dot (circle)
+        draw.backgroundTransparent(true);  //Change settings of the Dot (circle)
         draw.setColor("Yellow");
-        draw.visibility(false);
+        draw.visibility(true);
 
         layeredPane.add(openPathButton, 10, 0);
         layeredPane.add(saveButton, 9, 0);
@@ -385,6 +389,8 @@ public class MainActivity extends JPanel {
         circles.clear();    //Reset ArrayList of circles
 
         add(layeredPane);       //Put layeredPane in MainActivity()
+
+        draw.redraw();
     }
 
     static class ItemChangeListener implements ItemListener {
@@ -456,6 +462,32 @@ public class MainActivity extends JPanel {
         }
 
         public void mouseClicked(MouseEvent evt) {
+            z2 = 0;
+            v2 = 0;
+            if (!circles.isEmpty()) {
+                while (z2 < circles.size() / 3) {
+                    if (circles.get(v2) + 15 >= mouseX && circles.get(v2) - 15 <= mouseX &&
+                            circles.get(v2 + 1) + 15 >= mouseY && circles.get(v2 + 1) - 15 <= mouseY) {
+                        if (selected) {
+                            selected = false;
+                            circles.set(prevCircle + 2, selectedColor);
+                            selectedColor = -1;
+                            prevCircle = -1;
+                            break;
+                        } else if (!selected) {
+                            selected = true;
+                            circles.set(prevCircle + 2, selectedColor);
+                            selectedColor = circles.get(v2 + 2);
+                            circles.set(v2 + 2, 11);
+                            prevCircle = v2;
+                            break;
+                        }
+                    }
+                    z2 += 1;
+                    v2 += 3;
+                }
+                draw.redraw();
+            }
         }
 
         public void mouseEntered(MouseEvent evt) {  //Mouse entered window
@@ -583,7 +615,6 @@ public class MainActivity extends JPanel {
         static int hei = 0;
         static boolean opaque = true;
         public static JPanel paintPanel;
-        public static JPanel linePanel;
         public static JPanel curvePanel;
         static boolean redrawCircle = false;
         static boolean redrawLine = false;
@@ -594,8 +625,6 @@ public class MainActivity extends JPanel {
         static boolean clear = false;
         static int numOfIndexesRun = 0;
         static int numTimes2Run = 0;
-        static int loopflag = 0;
-        static int lineInitVar = 0;
         static int midX = 0;
         static int midY = 0;
         static int lineSetting = -100;
@@ -667,6 +696,8 @@ public class MainActivity extends JPanel {
                 circles.add(9);
             } else if (color.equalsIgnoreCase("cyan")) {
                 circles.add(10);
+            } else if (color.equalsIgnoreCase("blue")) {
+                circles.add(11);
             }
         }
 
@@ -682,6 +713,89 @@ public class MainActivity extends JPanel {
                     super.paintComponent(g);
                     paintPanel.setOpaque(opaque);
                     paintPanel.setVisible(isVisible);
+
+                    g.setColor(Color.RED);
+                    g.fillOval(800, 500, 15,15);
+                    g.setColor(Color.BLACK);
+                    g.drawString(" = Line", 817, 512);
+
+                    g.setColor(Color.MAGENTA);
+                    g.fillOval(800, 530, 15,15);
+                    g.setColor(Color.BLACK);
+                    g.drawString(" = Curve", 817, 542);
+
+                    g.setColor(Color.CYAN);
+                    g.fillOval(800, 560, 15,15);
+                    g.setColor(Color.BLACK);
+                    g.drawString(" = Reverse", 817, 572);
+
+                    g.setColor(Color.GREEN);
+                    g.fillOval(800, 590, 15,15);
+                    g.setColor(Color.BLACK);
+                    g.drawString(" = Strafe", 817, 602);
+
+                    g.setColor(Color.PINK);
+                    g.fillOval(800, 620, 15,15);
+                    g.setColor(Color.BLACK);
+                    g.drawString(" = Spline", 817, 632);
+
+                    g.setColor(Color.ORANGE);
+                    g.fillOval(800, 650, 15,15);
+                    g.setColor(Color.BLACK);
+                    g.drawString(" = Arm/Servo", 817, 662);
+
+                    numOfIndexesRun = 0;
+                    componentChecker = 0;
+                    try {
+                        if ((settings.isEmpty() && circles.size() / 3 == 2) ||
+                                (settings.size() < circles.size() / 3 - 1 && circles.size() / 3 >= 2)) {
+                            lineSettingsAndParameters.clear();
+
+                            settings.add(getCurrentSetting(lineSetting));
+                            params1.add(String.valueOf(circles.get(circles.size() - 6)));
+                            params1.add(String.valueOf(circles.get(circles.size() - 5)));
+                            params2.add("N/A");
+                            params2.add("N/A");
+                            params3.add(String.valueOf(circles.get(circles.size() - 3)));
+                            params3.add(String.valueOf(circles.get(circles.size() - 2)));
+
+                            lineSettingsAndParameters.add(settings);
+                            lineSettingsAndParameters.add(params1);
+                            lineSettingsAndParameters.add(params2);
+                            lineSettingsAndParameters.add(params3);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    ArrayList<ArrayList<Integer>> points2draw = LineArrayProcessor.polyLineList(lineSettingsAndParameters);
+                    if (points2draw.get(0).get(0) != -1 && points2draw.get(0).get(0) != -2) {
+                        if (lineSetting == 1) {
+
+                        } else if (lineSetting == -100) {
+                            System.out.println("Error: Invalid Line Setting! (lineSetting index = " + lineSetting + ")");
+                        } else {
+                            while (points2draw.size() > numOfIndexesRun) {
+                                g.setColor(Color.BLACK);
+                                try {
+                                    if (points2draw.get(numOfIndexesRun).size() == 4)
+                                        g.drawLine(points2draw.get(numOfIndexesRun).get(0) + xOffset,
+                                                points2draw.get(numOfIndexesRun).get(1) + yOffset,
+                                                points2draw.get(numOfIndexesRun).get(2) + xOffset,
+                                                points2draw.get(numOfIndexesRun).get(3) + yOffset);
+                                    else
+                                        g.drawPolyline(LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2),
+                                                LineArrayProcessor.extractY(points2draw.get(numOfIndexesRun), 2),
+                                                LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2).length);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                numOfIndexesRun += 1;
+                            }
+                        }
+                    }
+                    numOfIndexesRun = 0;
+                    componentChecker = 0;
                     while (numOfIndexesRun < circles.size() / 3) {
                         switch (circles.get(componentChecker + 2)) {      //Sets color
                             case (0):
@@ -717,64 +831,13 @@ public class MainActivity extends JPanel {
                             case (10):
                                 g.setColor(Color.CYAN);
                                 break;
+                            case (11):
+                                g.setColor(Color.BLUE);
+                                break;
                         }
-                        g.fillOval(circles.get(componentChecker), circles.get(componentChecker + 1), wid, hei);
+                        g.fillOval(circles.get(componentChecker) + xOffset, circles.get(componentChecker + 1) + yOffset, wid, hei);
                         numOfIndexesRun += 1;
                         componentChecker += 3;
-                    }
-                    numOfIndexesRun = 0;
-                    componentChecker = 0;
-                    if (circles.size() / 3 == 0 || circles.size() / 3 == 1) {
-                        numTimes2Run = -100;
-                    } else {
-                        numTimes2Run = circles.size() / 3 - 1;
-                    }
-                    try {
-                        System.out.println();
-                        if ((settings.isEmpty() && circles.size() / 3 == 2) ||
-                                (settings.size() < circles.size() / 3 && circles.size() / 3 >= 2 &&
-                                lineSettingsAndParameters.get(0).size() < circles.size() / 3)) {
-                            //System.out.println(loopflag2 + " < " + numTimes2Run2 + ", " + settings.size() + " < " + (circles.size() / 3 - 1));
-                            settings.add(getCurrentSetting(lineSetting));
-                            params1.add(String.valueOf(circles.get(circles.size() - 6)));
-                            params1.add(String.valueOf(circles.get(circles.size() - 5)));
-                            params2.add("N/A");
-                            params2.add("N/A");
-                            params3.add(String.valueOf(circles.get(circles.size() - 3)));
-                            params3.add(String.valueOf(circles.get(circles.size() - 2)));
-
-                            lineSettingsAndParameters.add(settings);
-                            lineSettingsAndParameters.add(params1);
-                            lineSettingsAndParameters.add(params2);
-                            lineSettingsAndParameters.add(params3);
-                        }
-                    } catch (Exception e){
-                        e.printStackTrace();
-                    }
-
-                    ArrayList<ArrayList<Integer>> points2draw = LineArrayProcessor.polyLineList(lineSettingsAndParameters);
-                    if (points2draw.get(0).get(0) != -1 && points2draw.get(0).get(0) != -2) {
-                        if (lineSetting == 1) {
-
-                        } else if (lineSetting == -100) {
-                            System.out.println("Error: Invalid Line Setting! (lineSetting index = " + lineSetting + ")");
-                        } else {
-                            while (points2draw.size() > numOfIndexesRun) {
-                                try {
-                                    if (points2draw.size() == 1 && points2draw.get(0).size() == 4)
-                                        g.drawLine(points2draw.get(0).get(0), points2draw.get(0).get(1), points2draw.get(0).get(2),
-                                                points2draw.get(0).get(3));
-                                    else
-                                        g.drawPolyline(LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2),
-                                                LineArrayProcessor.extractY(points2draw.get(numOfIndexesRun), 2),
-                                                points2draw.get(numOfIndexesRun).size());
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                                numOfIndexesRun += 1;
-                            }
-                            System.out.println("o");
-                        }
                     }
                 }
             };

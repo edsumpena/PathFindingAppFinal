@@ -141,24 +141,26 @@ public class helloWorld extends JComponent {
                 xValToArray[i] = xVals.get(i);
                 i += 1;
             }
+            System.out.println(xValToArray.length);
             return xValToArray;
         }
 
         private static int[] extractY(ArrayList<Integer> circles, int valsPerCircle) {
-            ArrayList<Integer> xVals = new ArrayList<>();
+            ArrayList<Integer> yVals = new ArrayList<>();
             int i = 0;
             while (circles.size() > i) {
-                xVals.add(circles.get(i + 1));
+                yVals.add(circles.get(i + 1));
                 i += valsPerCircle;
             }
 
-            int[] xValToArray = new int[xVals.size()];
+            int[] yValToArray = new int[yVals.size()];
             i = 0;
-            while (xVals.size() > i) {
-                xValToArray[i] = xVals.get(i);
+            while (yVals.size() > i) {
+                yValToArray[i] = yVals.get(i);
                 i += 1;
             }
-            return xValToArray;
+            System.out.println(yValToArray.length);
+            return yValToArray;
         }
     }
 
