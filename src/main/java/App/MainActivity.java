@@ -14,6 +14,7 @@ package App;
  *  -ArrayList "lineSettingsAndParameters.get(3)": {lineX3, lineY3}
  */
 
+import App.Converters.ArrayListConverters;
 import App.Converters.FromAndToPose2D;
 import App.Converters.LineArrayProcessor;
 import App.Debugger.cmdLine;
@@ -36,6 +37,7 @@ import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 
@@ -56,6 +58,8 @@ public class MainActivity extends JPanel {
     static boolean mouseExited = true;
     static boolean mouseClicked = false;
     static boolean mouseClickedFocus = false;
+    static int prevSelectedLine = -1;
+    static int prevSelectedMotor = -1;
     public static int xOffset = -15;
     public static int yOffset = -40;
     static ArrayList<Integer> circles = new ArrayList<>();
@@ -73,7 +77,6 @@ public class MainActivity extends JPanel {
     static int z2 = 0;
     static int v2 = 0;
     static boolean selected = false;
-    static int index = 9;
     static int clearX = 0;
     static int clearY = 0;
     static File prevFilePath;
@@ -117,6 +120,50 @@ public class MainActivity extends JPanel {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+                        }
+                        try {
+                            Thread.sleep(50);
+                        } catch (InterruptedException ignore) {
+                        }
+                    }
+                }
+            };
+            one.start();
+        }
+
+        public static void selectedListener(JComboBox cbLine, JComboBox cbMotor) {    //All JLayeredPane related loops
+            Thread one = new Thread() {
+                public void run() {
+                    boolean oneTimeRun = false;
+                    while (unstoppable) {
+                        try {
+                            if (selected && !oneTimeRun) {
+                                prevSelectedLine = cbLine.getSelectedIndex();
+                                prevSelectedMotor = cbMotor.getSelectedIndex();
+                                System.out.println(selectedCircle[0] + " " + selectedCircle[1]);
+                                if (!(lineSettingsAndParameters.get(0).get(circles.indexOf(selectedCircle[0]) / 3 - 1).substring(0, 1).toUpperCase() +
+                                        lineSettingsAndParameters.get(0).get(circles.indexOf(selectedCircle[0]) / 3 - 1).substring(1)).contains("Spline"))
+                                    cbLine.setSelectedItem(lineSettingsAndParameters.get(0).get(circles.indexOf(selectedCircle[0]) / 3 - 1).substring(0, 1).toUpperCase() +
+                                            lineSettingsAndParameters.get(0).get(circles.indexOf(selectedCircle[0]) / 3 - 1).substring(1));
+                                else
+                                    cbLine.setSelectedItem(lineSettingsAndParameters.get(0).get(circles.indexOf(selectedCircle[0]) / 3 - 1).substring(0, 1).toUpperCase() +
+                                            lineSettingsAndParameters.get(0).get(circles.indexOf(selectedCircle[0]) / 3 - 1).substring(1) + " To");
+                                int i = 0;
+                                while (cbMotor.getItemCount() > i) {
+                                    if (cbMotor.getItemAt(i).toString().contains(motorNames.get(circles.indexOf(selectedCircle[0]) / 3 - 1))) {
+                                        cbMotor.setSelectedIndex(i);
+                                        System.out.println(i);
+                                    }
+                                    i += 1;
+                                }
+                                oneTimeRun = true;
+                            } else if (!selected && oneTimeRun) {
+                                cbLine.setSelectedIndex(prevSelectedLine);
+                                cbMotor.setSelectedIndex(prevSelectedMotor);
+                                oneTimeRun = false;
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
                         try {
                             Thread.sleep(50);
@@ -225,7 +272,6 @@ public class MainActivity extends JPanel {
                     String encodedLoc = Base64.getEncoder().encodeToString(moveMotorLocation.getBytes());
                     String encodedMotors = Base64.getEncoder().encodeToString(motors.getBytes());
                     tf.setText("TRAJ:" + encodedTraj + ",MOTORS;" + encodedMotors + ",LOCATION-" + encodedLoc);
-                    System.out.println("cool");
                 } catch (Exception e) {
                     System.err.println(e.toString());
                 }
@@ -252,28 +298,39 @@ public class MainActivity extends JPanel {
                         currentlySelected = String.valueOf(fileToRead).substring(String.valueOf(fileToRead).lastIndexOf("\\") + 1,
                                 String.valueOf(fileToRead).indexOf("."));
                     }
-                    System.out.println(fileToRead);
                     ZipAndUnzip.unzipFolder(String.valueOf(fileToRead), String.valueOf(fileChooser.getCurrentDirectory()));
                     String name = String.valueOf(fileToRead).substring(String.valueOf(fileToRead).lastIndexOf("\\") + 1,
                             String.valueOf(fileToRead).indexOf("."));
+                    pathName = name;
                     String cirDir = fileChooser.getCurrentDirectory() + "\\" + name + "Circles.cir";    //Sets .cir file containing serialized circle array as current directory
                     String lineDir = fileChooser.getCurrentDirectory() + "\\" + name + "Traj.line";     //Sets .line file containing serialized line array as current directory
+                    String trajDir = fileChooser.getCurrentDirectory() + "\\" + name + "Json.traj";
+                    draw.setDimension(15, 15);
+                    draw.backgroundTransparent(true);
+                    draw.visibility(true);
                     circles = SerializeAndDeserialize.deserialize(cirDir, false);    //Gets deserialized ArrayList and defines variable
                     lineSettingsAndParameters = SerializeAndDeserialize.deserialize(lineDir, true);  //Deserializes the arrays (see SerializeAndDeserialize class)
+
+                    String trajectory = SerializeAndDeserialize.readJson(trajDir);
+                    String motorString = trajectory.substring(trajectory.indexOf(";") + 1, trajectory.lastIndexOf("-") - 9);
+                    motorString = motorString.replace("[\"", "");
+                    motorString = motorString.replace("\"]", "");
+                    motorNames = new ArrayList<>(Arrays.asList(motorString.split("\",\"")));
+
+                    String motorIndexes = trajectory.substring(trajectory.lastIndexOf("-") + 1);
+                    motorIndexes = motorIndexes.replace("[", "");
+                    motorIndexes = motorIndexes.replace("]", "");
+                    motorExecutedLocation = ArrayListConverters.stringArrayToIntArray(
+                            new ArrayList<>(Arrays.asList(motorIndexes.split(","))));
+
+                    settings = lineSettingsAndParameters.get(0);
+                    params1 = lineSettingsAndParameters.get(1);
+                    params2 = lineSettingsAndParameters.get(2);
+                    params3 = lineSettingsAndParameters.get(3);
                     ZipAndUnzip.deleteAndOrRename(cirDir, "", "", true, false);
+                    ZipAndUnzip.deleteAndOrRename(trajDir, "", "", true, false);
                     ZipAndUnzip.deleteAndOrRename(lineDir, "", "", true, false);    //Deletes temporary files
                     prevFilePath = fileChooser.getCurrentDirectory();
-                    ArrayList<Integer> indexTempVals = new ArrayList<>();
-                    indexTempVals.add(0);
-                    indexTempVals.add(1);
-                    indexTempVals.add(2);
-                    indexTempVals.add(3);
-                    indexTempVals.add(4);
-                    indexTempVals.add(5);
-                    cmdLine.debugger.dispVar("circles", circles, indexTempVals, -1000);    //Debugger- Displays variables in the console with a much more readable fashion
-                    cmdLine.debugger.dispVar("lineSettingsAndParameters.get(0)", lineSettingsAndParameters.get(0), indexTempVals, "N/A");
-                    cmdLine.debugger.dispVar("lineSettingsAndParameters.get(1)", lineSettingsAndParameters.get(1), indexTempVals, "N/A");
-                    cmdLine.debugger.dispVar("lineSettingsAndParameters.get(2)", lineSettingsAndParameters.get(2), indexTempVals, "N/A");
                 } else if (result == JFileChooser.CANCEL_OPTION) {      //If cancel button is pressed
                     prevFilePath = fileChooser.getCurrentDirectory();
                 } else if (result == JFileChooser.ERROR_OPTION) {       //If X button is pressed
@@ -301,6 +358,8 @@ public class MainActivity extends JPanel {
                 int userSelection = fileChooser.showSaveDialog(layeredPane);
                 if (userSelection == JFileChooser.APPROVE_OPTION) {     //Save Button is pressed
                     File f = fileChooser.getSelectedFile();
+                    pathName = String.valueOf(f).substring(String.valueOf(f).lastIndexOf("\\") + 1,
+                            String.valueOf(f).indexOf("."));
                     if (!String.valueOf(f).contains(".path")) {   //If file name does not contain .path
                         int dialogButton = JOptionPane.ERROR_MESSAGE;   //Error message pops up
                         JOptionPane.showMessageDialog(null, "Error: File must contain '.path' extension", "Error", dialogButton);
@@ -321,8 +380,20 @@ public class MainActivity extends JPanel {
                                         String.valueOf(fileToSave).indexOf("."));
                             }
                             prevFilePath = fileChooser.getCurrentDirectory();
+                            String motors = "";
+                            String loc = "";
+                            String traj = "";
+                            try {
+                                TrajBuilderWrapper driveTraj = new TrajBuilderWrapper(FromAndToPose2D.pointsToPose2d(circles,
+                                        0, 1, 3), lineSettingsAndParameters.get(0),
+                                        DriverConstraintsWrapper.getDriveConstraints(), pathName);
+                                motors = objectMapper.writeValueAsString(motorNames);
+                                loc = objectMapper.writeValueAsString(motorExecutedLocation);
+                                traj = objectMapper.writeValueAsString(driveTraj);
+                            } catch (Exception e) {
+                            }
                             SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, String.valueOf(fileToSave),
-                                    fileNoExt);
+                                    fileNoExt, traj, loc, motors);
                             ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(), fileNoExt);
                         }
                     } else {    //If not a duplicate file name and contains .path ext in the name
@@ -333,8 +404,22 @@ public class MainActivity extends JPanel {
                         }
                         prevFilePath = fileChooser.getCurrentDirectory();
                         currentlySelected = fileNoExt;
+                        String motors = "";
+                        String loc = "";
+                        String traj = "";
+                        try {
+                            System.out.println(lineSettingsAndParameters);
+                            System.out.println(circles);
+                            TrajBuilderWrapper driveTraj = new TrajBuilderWrapper(FromAndToPose2D.pointsToPose2d(circles,
+                                    0, 1, 3), lineSettingsAndParameters.get(0),
+                                    DriverConstraintsWrapper.getDriveConstraints(), pathName);
+                            motors = objectMapper.writeValueAsString(motorNames);
+                            loc = objectMapper.writeValueAsString(motorExecutedLocation);
+                            traj = objectMapper.writeValueAsString(driveTraj);
+                        } catch (Exception e) {
+                        }
                         SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, String.valueOf(fileToSave),
-                                fileNoExt);
+                                fileNoExt, traj, loc, motors);
 
                         ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(), fileNoExt);
                     }
@@ -363,6 +448,8 @@ public class MainActivity extends JPanel {
         draw.showAllCirclesAndLines(layeredPane);   //Draws invisible circle--Allows us to access + change paintComponent after runtime
 
         threads.executeRepaintAndClear(layeredPane, jLabel);    //See "threads" class
+
+        threads.selectedListener(jComboBox1, jComboBox2);
         circles.clear();    //Reset ArrayList of circles
 
         add(layeredPane);       //Put layeredPane in MainActivity()
@@ -382,6 +469,10 @@ public class MainActivity extends JPanel {
                     strafe = false;
                     reverse = false;
                     spline = false;
+                    if (selected) {
+                        lineSettingsAndParameters.get(0).set(circles.indexOf(selectedCircle[0]) / 3 - 1, "line");
+                        circles.set(circles.indexOf(selectedCircle[0]) + 2 ,draw.getColorIndex("Red"));
+                    }
                 } else if (String.valueOf(item).equals("Curve")) {      //Robot turns to a location
                     curve = true;
                     line = false;
@@ -389,6 +480,10 @@ public class MainActivity extends JPanel {
                     strafe = false;
                     reverse = false;
                     spline = false;
+                    if (selected) {
+                        lineSettingsAndParameters.get(0).set(circles.indexOf(selectedCircle[0]) / 3 - 1, "curve");
+                        circles.set(circles.indexOf(selectedCircle[0]) + 2 ,draw.getColorIndex("Magenta"));
+                    }
                 } else if (String.valueOf(item).equals("[Select]")) {
                     select = true;
                     line = false;
@@ -403,6 +498,10 @@ public class MainActivity extends JPanel {
                     strafe = false;
                     reverse = true;
                     spline = false;
+                    if (selected) {
+                        lineSettingsAndParameters.get(0).set(circles.indexOf(selectedCircle[0]) / 3 - 1, "reverse");
+                        circles.set(circles.indexOf(selectedCircle[0]) + 2 ,draw.getColorIndex("Cyan"));
+                    }
                 } else if (String.valueOf(item).equals("Strafe")) {       //Robot strafes to a location (mechinum wheels only)
                     line = false;
                     select = false;
@@ -410,6 +509,10 @@ public class MainActivity extends JPanel {
                     strafe = true;
                     reverse = false;
                     spline = false;
+                    if (selected) {
+                        lineSettingsAndParameters.get(0).set(circles.indexOf(selectedCircle[0]) / 3 - 1, "strafe");
+                        circles.set(circles.indexOf(selectedCircle[0]) + 2 ,draw.getColorIndex("Green"));
+                    }
                 } else if (String.valueOf(item).equals("Spline To")) {
                     spline = true;
                     line = false;
@@ -417,6 +520,10 @@ public class MainActivity extends JPanel {
                     curve = false;
                     strafe = false;
                     reverse = false;
+                    if (selected) {
+                        lineSettingsAndParameters.get(0).set(circles.indexOf(selectedCircle[0]) / 3 - 1, "spline");
+                        circles.set(circles.indexOf(selectedCircle[0]) + 2 ,draw.getColorIndex("Pink"));
+                    }
                 }
             }
         }
@@ -435,11 +542,13 @@ public class MainActivity extends JPanel {
                     while (MotorSetup.importMotors().get(0).size() > i) {      //Gets which motor is selected
                         if (String.valueOf(item).contains(MotorSetup.importMotors().get(0).get(i))) {
                             currentlySelected = MotorSetup.importMotors().get(0).get(i);
+                            if (selected) {
+                                motorNames.set(circles.indexOf(selectedCircle[0]) / 3 - 1, currentlySelected);
+                            }
                         }
                         i += 1;
                     }
                 }
-                System.out.println(currentlySelected);
             }
         }
     }
@@ -525,9 +634,6 @@ public class MainActivity extends JPanel {
                     params3.set(v / 3 * 2 - 1, String.valueOf(circles.get(v + 1)));
                 } catch (Exception e) {
                 }
-                System.out.println(circles);
-                System.out.println(params1);
-                System.out.println(params3);
                 lineSettingsAndParameters.clear();
                 lineSettingsAndParameters.add(settings);
                 lineSettingsAndParameters.add(params1);
@@ -648,7 +754,6 @@ public class MainActivity extends JPanel {
         static int hei = 0;
         static boolean opaque = true;
         public static JPanel paintPanel;
-        public static JPanel curvePanel;
         static boolean redrawCircle = false;
         static boolean redrawLine = false;
         static boolean redrawCurve = false;
@@ -657,16 +762,6 @@ public class MainActivity extends JPanel {
         static boolean isVisible = false;
         static int numOfIndexesRun = 0;
         static int numTimes2Run = 0;
-        static int midX = 0;
-        static int midY = 0;
-        static int numTimes2Run2 = 0;
-        static int loopflag2 = 0;
-        static int lineInitVar2 = 0;
-        static ArrayList<Integer> xPoints = new ArrayList<>();
-        static ArrayList<Integer> yPoints = new ArrayList<>();
-        static ArrayList<Integer> xTemp = new ArrayList<>();
-        static ArrayList<Integer> yTemp = new ArrayList<>();
-        static ArrayList<Integer> getIndexes = new ArrayList<>();
 
         public static void setDimension(int width, int height) {        //Set width and height of circle
             wid = width;
@@ -926,7 +1021,7 @@ public class MainActivity extends JPanel {
                         e.printStackTrace();
                     }
 
-                    ArrayList<ArrayList<Integer>> points2draw = LineArrayProcessor.polyLineList(lineSettingsAndParameters);
+                    ArrayList<ArrayList<Integer>> points2draw = LineArrayProcessor.polyLineList(lineSettingsAndParameters, false);
                     if (points2draw.get(0).get(0) != -1 && points2draw.get(0).get(0) != -2) {
                         numOfIndexesRun = 0;
                         componentChecker = 0;
@@ -934,16 +1029,77 @@ public class MainActivity extends JPanel {
                         if (points2draw.get(points2draw.size() - 1).contains(0)) {
                             while (points2draw.size() - 1 > numOfIndexesRun) {
                                 if (points2draw.get(points2draw.size() - 1).get(numOfIndexesRun) == 0) {
-                                    g2d.setColor(Color.BLACK);
-                                    GeneralPath curvedLine = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
-                                    curvedLine.moveTo(points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2),
-                                            points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1));
-                                    curvedLine.curveTo(points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2),
-                                            points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1), 100, 100,
-                                            points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2),
-                                            points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1));
-                                    curvedLine.closePath();
-                                    g2d.draw(curvedLine);
+                                    try {
+                                        g2d.setColor(Color.BLACK);
+                                        QuadCurve2D curvedLine = new QuadCurve2D.Double();
+                                        int midX;
+                                        int midY;
+                                        if (!points2draw.isEmpty() && (points2draw.get(0).size() / 2 > 1 || points2draw.size() > 1)) {
+                                            if (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) <
+                                                    points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) &&
+                                                    points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) >=
+                                                            points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1)) {
+                                                midX = ((points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset) -
+                                                        (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset)) / 2 +
+                                                        (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset) +
+                                                        ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset) -
+                                                                (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset)) * 2 / 3;
+                                                midY = ((points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset) -
+                                                        (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset)) / 2 +
+                                                        (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset) +
+                                                        ((points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset) -
+                                                                (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset)) / 3;
+                                            } else if (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) >=
+                                                    points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) &&
+                                                    points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) >=
+                                                            points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1)) {
+                                                midX = ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset) -
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset)) / 2 +
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset) -
+                                                        ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset) -
+                                                                (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset)) * 2 / 3;
+                                                midY = ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset) -
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset)) / 2 +
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset) -
+                                                        ((points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset) -
+                                                                (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset)) / 3;
+
+                                            } else if (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) >=
+                                                    points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) &&
+                                                    points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) <
+                                                            points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1)) {
+                                                midX = ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset) -
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset)) / 2 +
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset) +
+                                                        ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset) -
+                                                                (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset)) / 3;
+                                                midY = ((points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset) -
+                                                        (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset)) / 2 +
+                                                        (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset) +
+                                                        ((points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset) -
+                                                                (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset)) / 3;
+                                            } else {
+                                                midX = ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset) -
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset)) / 2 +
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset) -
+                                                        ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset) -
+                                                                (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset)) * 2 / 3;
+                                                midY = ((points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset) -
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset)) / 2 +
+                                                        (points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset) -
+                                                        ((points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset) -
+                                                                (points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset)) / 3;
+                                            }
+                                            curvedLine.setCurve(points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2) + xOffset + 5,
+                                                    points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1) + yOffset + 5,
+                                                    midX + 5, midY + 5,
+                                                    points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2) + xOffset + 5,
+                                                    points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1) + yOffset + 5);
+                                            g2d.draw(curvedLine);
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                                 numOfIndexesRun += 1;
                             }
@@ -955,6 +1111,10 @@ public class MainActivity extends JPanel {
                                 if (points2draw.get(points2draw.size() - 1).get(numOfIndexesRun) == -1) {
                                     g.setColor(Color.BLACK);
                                     try {
+                                        if (numOfIndexesRun > 0) {
+                                            points2draw.get(numOfIndexesRun).add(0, points2draw.get(numOfIndexesRun - 1).get(0));
+                                            points2draw.get(numOfIndexesRun).add(1, points2draw.get(numOfIndexesRun - 1).get(1));
+                                        }
                                         if (points2draw.get(numOfIndexesRun).size() == 4) {
                                             g.drawLine(points2draw.get(numOfIndexesRun).get(0) + xOffset + 5,
                                                     points2draw.get(numOfIndexesRun).get(1) + yOffset + 5,
@@ -964,6 +1124,10 @@ public class MainActivity extends JPanel {
                                             g.drawPolyline(LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2),
                                                     LineArrayProcessor.extractY(points2draw.get(numOfIndexesRun), 2),
                                                     LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2).length);
+                                        }
+                                        if (numOfIndexesRun > 0) {
+                                            points2draw.get(numOfIndexesRun).remove(0);
+                                            points2draw.get(numOfIndexesRun).remove(1);
                                         }
                                     } catch (Exception e) {
                                         e.printStackTrace();
@@ -976,8 +1140,6 @@ public class MainActivity extends JPanel {
                     if (selected) {
                         g.setColor(Color.BLUE);
                         g.fillOval(selectedCircle[0] + xOffset - 2, selectedCircle[1] + yOffset - 2, 18, 18);
-                    } else {
-
                     }
                     numOfIndexesRun = 0;
                     componentChecker = 0;
@@ -1036,140 +1198,6 @@ public class MainActivity extends JPanel {
             paintPanel.setBounds(0, 0, 2000, 2000);           //Inits/draws all circles
             lp.add(paintPanel, 50, 0);      //Sets object constraints, a value that determines layering
             lp.moveToFront(paintPanel);
-        }
-
-        public static void initCurvedLines(JLayeredPane lp) {
-            numTimes2Run2 = 0;
-            loopflag2 = 0;
-            lineInitVar2 = 0;
-            midX = 0;
-            midY = 0;
-            lineSettingsAndParameters.clear();
-            if (circles.size() / 3 == 0 || circles.size() / 3 == 1) {
-                numTimes2Run2 = -100;
-            } else {
-                numTimes2Run2 = circles.size() / 3 - 1;
-            }
-            while (loopflag2 < numTimes2Run2) {
-                try {
-                    if (circles.get(lineInitVar2) > circles.get(lineInitVar2 + 3)) {
-                        midX = (circles.get(lineInitVar2) - circles.get(lineInitVar2 + 3)) / 2 + circles.get(lineInitVar2 + 3);
-                    } else if (circles.get(lineInitVar2 + 3) > circles.get(lineInitVar2)) {
-                        midX = (circles.get(lineInitVar2 + 3) - circles.get(lineInitVar2)) / 2 + circles.get(lineInitVar2);
-                    } else if (circles.get(lineInitVar2).equals(circles.get(lineInitVar2 + 3))) {
-                        midX = circles.get(lineInitVar2);
-                    }
-                    if (circles.get(lineInitVar2 + 4) > circles.get(lineInitVar2 + 1)) {
-                        midY = (circles.get(lineInitVar2 + 4) - circles.get(lineInitVar2 + 1)) / 2 + circles.get(lineInitVar2 + 1);
-                    } else if (circles.get(lineInitVar2 + 1) > circles.get(lineInitVar2 + 4)) {
-                        midY = (circles.get(lineInitVar2 + 1) - circles.get(lineInitVar2 + 4)) / 2 + circles.get(lineInitVar2 + 4);
-                    } else if (circles.get(lineInitVar2 + 1).equals(circles.get(lineInitVar2 + 4))) {
-                        midY = circles.get(lineInitVar2 + 1);
-                    }
-                    midX = midX + xOffset;
-                    midY = midY + yOffset;
-                    if (circles.size() / 3 - 2 == loopflag2 && xPoints.size() / 3 < circles.size() - 1) {
-                        xPoints.add(circles.get(lineInitVar2) + xOffset);
-                        xPoints.add(midX - 50);
-                        xPoints.add(circles.get(lineInitVar2 + 3) + xOffset);
-                    }
-                    if (circles.size() / 3 - 2 == loopflag2 && yPoints.size() / 3 < circles.size() - 1) {
-                        yPoints.add(circles.get(lineInitVar2 + 1) + yOffset);
-                        yPoints.add(midY - 50);
-                        yPoints.add(circles.get(lineInitVar2 + 4) + yOffset);
-                    }
-                } catch (Exception e) {
-                }
-                curvePanel = new JPanel() {  //Sets paintComponent as JPanel -> JPanel then set on layout
-                    @Override
-                    public void paint(Graphics g) {
-                        super.paintComponent(g);
-                        Graphics2D g2d = (Graphics2D) g;
-                        g2d.setColor(Color.BLACK);
-                        GeneralPath curvedLine = new GeneralPath(GeneralPath.WIND_EVEN_ODD, xPoints.size());
-                        curvePanel.setOpaque(opaque);
-                        curvePanel.setVisible(isVisible);
-                        try {
-                            curvedLine.moveTo(xPoints.get(lineInitVar2), yPoints.get(lineInitVar2));
-                            curvedLine.curveTo(xPoints.get(lineInitVar2), yPoints.get(lineInitVar2), xPoints.get(lineInitVar2 + 1),
-                                    yPoints.get(lineInitVar2 + 1), xPoints.get(lineInitVar2 + 2), yPoints.get(lineInitVar2 + 2));
-                            curvedLine.closePath();
-                            g2d.draw(curvedLine);
-                        } catch (Exception e) {
-                        }
-                    }
-                };
-                curvePanel.setOpaque(opaque);
-                if (redrawCurve) {
-                    curvePanel.repaint();
-                    redrawCurve = false;
-                }
-                //System.out.println((circles.get(lineInitVar2) + xOffset) + ", " + (circles.get(lineInitVar2 + 1) + yOffset) + ", " +
-                //        midX + ", " + midY + ", " + (circles.get(lineInitVar2 + 3) + xOffset) + ", " + (circles.get(lineInitVar2 + 4) + yOffset));
-                getIndexes.clear();
-                getIndexes.add(0);
-                getIndexes.add(1);
-                getIndexes.add(2);
-                getIndexes.add(3);
-                cmdLine.debugger.dispVar("settings", settings, getIndexes, "N/A");
-                if (settings.size() < circles.size() / 3 && circles.size() / 3 >= 2 && loopflag2 == numTimes2Run2 - 1) {
-                    //System.out.println(loopflag2 + " < " + numTimes2Run2 + ", " + settings.size() + " < " + (circles.size() / 3 - 1));
-                    settings.add("curve");
-                    params1.add(String.valueOf(xPoints.get(lineInitVar2)));
-                    params1.add(String.valueOf(yPoints.get(lineInitVar2)));
-                    params2.add(String.valueOf(xPoints.get(lineInitVar2 + 1)));
-                    params2.add(String.valueOf(yPoints.get(lineInitVar2 + 1)));
-                    params3.add(String.valueOf(xPoints.get(lineInitVar2 + 2)));
-                    params3.add(String.valueOf(yPoints.get(lineInitVar2 + 2)));
-
-                    try {
-                        int zz = 0;
-                        cmdLine.debugger.dispVar("params1", params1, 0, "N/A");
-                        while (params1.size() > zz) {
-                            String loopCondition = lineSettingsAndParameters.get(1).contains(params1.get(zz)) + "&&" +
-                                    lineSettingsAndParameters.get(2).contains(params2.get(zz)) + "&&" +
-                                    lineSettingsAndParameters.get(3).contains(params3.get(zz));
-                            cmdLine.debugger.conditionChecker(loopCondition, true);
-                            if (lineSettingsAndParameters.get(1).contains(params1.get(zz)) &&
-                                    lineSettingsAndParameters.get(2).contains(params2.get(zz)) &&
-                                    lineSettingsAndParameters.get(3).contains(params3.get(zz))) {
-                                lineSettingsAndParameters.get(1).remove(lineSettingsAndParameters.get(1).indexOf(params1.get(zz)));
-                                lineSettingsAndParameters.get(2).remove(lineSettingsAndParameters.get(2).indexOf(params2.get(zz)));
-                                lineSettingsAndParameters.get(3).remove(lineSettingsAndParameters.get(3).indexOf(params3.get(zz)));
-                            }
-                            zz = zz + 1;
-                        }
-                    } catch (Exception e) {
-                    }
-
-                    lineSettingsAndParameters.add(settings);
-                    lineSettingsAndParameters.add(params1);
-                    lineSettingsAndParameters.add(params2);
-                    lineSettingsAndParameters.add(params3);
-                }
-                try {
-                    //System.out.println((circles.size() / 3 - 2) + " == " + loopflag2 + ", " + settings.size() + " < " + (circles.size() / 3 - 1));
-                    if (lineSettingsAndParameters.get(0).get(loopflag2).equals("curve")) {
-                        xTemp.clear();
-                        xTemp.add(xPoints.get(lineInitVar2));
-                        xTemp.add(xPoints.get(lineInitVar2 + 1));
-                        xTemp.add(xPoints.get(lineInitVar2 + 2));
-                        int panelXCord = Collections.max(xTemp);
-                        yTemp.clear();
-                        yTemp.add(yPoints.get(lineInitVar2));
-                        yTemp.add(yPoints.get(lineInitVar2 + 1));
-                        yTemp.add(yPoints.get(lineInitVar2 + 2));
-                        int panelYCord = Collections.max(yTemp);
-                        curvePanel.setBounds(0, 0, panelXCord, panelYCord);
-                        lp.add(curvePanel, index, 0);
-                        index = index + 1;
-                    }
-                } catch (Exception e) {
-                }
-                //cmdLine.debugger.viewAllComponents(lp);
-                loopflag2 = loopflag2 + 1;
-                lineInitVar2 = lineInitVar2 + 3;
-            }
         }
     }
 }

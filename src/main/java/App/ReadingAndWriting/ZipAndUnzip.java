@@ -32,6 +32,15 @@ public class ZipAndUnzip {
             while ((len2 = in.read(buffer)) > 0) {
                 zos.write(buffer, 0, len2);
             }
+
+            ze= new ZipEntry(pathName + "Json.traj");
+            zos.putNextEntry(ze);
+            in = new FileInputStream(zipFilePath + "\\" + pathName + "Json.traj");
+
+            int len3;
+            while ((len3 = in.read(buffer)) > 0) {
+                zos.write(buffer, 0, len3);
+            }
             in.close();
             zos.closeEntry();
 
@@ -57,6 +66,11 @@ public class ZipAndUnzip {
         tempFolder2.setReadable(true);
         tempFolder2.setWritable(true);
         tempFolder2.delete();
+        File tempFolder3 = new File(zipFilePath + "\\" + name + "Json.traj");
+        tempFolder3.setExecutable(true);
+        tempFolder3.setReadable(true);
+        tempFolder3.setWritable(true);
+        tempFolder3.delete();
     }
     public static void deleteAndOrRename(String deletePath, String renamePath, String renameFilePathTo, boolean delete, boolean rename){
         try {

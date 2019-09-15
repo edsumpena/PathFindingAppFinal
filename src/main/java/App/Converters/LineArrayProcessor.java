@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 public class LineArrayProcessor {
     static ArrayList<Integer> curvesIndexList = new ArrayList<>();
+
     public static String getCurrentSetting(int setting) {
         String mode = "null";
         switch (setting) {
@@ -29,7 +30,7 @@ public class LineArrayProcessor {
         return mode;
     }
 
-    public static ArrayList<ArrayList<Integer>> polyLineList(ArrayList<ArrayList<String>> optionsAndCoords) {
+    public static ArrayList<ArrayList<Integer>> polyLineList(ArrayList<ArrayList<String>> optionsAndCoords, boolean debugMsg) {
         int i = 0;
         int x = 0;
         int z = 0;
@@ -43,54 +44,63 @@ public class LineArrayProcessor {
                 output.get(0).add(Integer.valueOf(optionsAndCoords.get(1).get(1)));
                 while (optionsAndCoords.get(0).size() > i) {
                     if (optionsAndCoords.get(0).get(i).equals("curve")) {
-                        System.out.println(!output.get(z).isEmpty());
-                        if(z != 0 && !output.get(z).isEmpty())
-                        z+=1;
+                        if (z != 0 && !output.get(z).isEmpty())
+                            z += 1;
                         curvesIndexList.add(0);
                         output.add(new ArrayList<>());
                         output.get(z).add(Integer.valueOf(optionsAndCoords.get(3).get(x)));
                         output.get(z).add(Integer.valueOf(optionsAndCoords.get(3).get(x + 1)));
-                        System.out.println("post0: " + output + " " + z);
+                        if (debugMsg)
+                            System.out.println("post0: " + output + " " + z);
                         try {
-                            if (!optionsAndCoords.get(0).get(i + 1).equals("curve") && !optionsAndCoords.get(0).get(i + 2).equals("curve")){
-                                z+=1;
-                                curvesIndexList.add(-1);
-                                output.add(adder);
+                            if (!optionsAndCoords.get(0).get(i + 1).equals("curve")) {
+                                z += 1;
+                                if (curvesIndexList.isEmpty() || curvesIndexList.get(curvesIndexList.size() - 1) != -1)
+                                    curvesIndexList.add(-1);
+                                output.add(new ArrayList<>());
                             }
-                        } catch (Exception e){}
+                        } catch (Exception e) {
+                        }
                     } else {
                         try {
-                            if(i + 1 <= optionsAndCoords.get(0).size() - 1 && optionsAndCoords.get(0).get(i + 1).equals("curve")){
-                                curvesIndexList.add(-1);
+                            if (i + 1 <= optionsAndCoords.get(0).size() - 1 && optionsAndCoords.get(0).get(i + 1).equals("curve")) {
+                                if (curvesIndexList.isEmpty() || curvesIndexList.get(curvesIndexList.size() - 1) != -1)
+                                    curvesIndexList.add(-1);
                                 output.get(z).add(Integer.valueOf(optionsAndCoords.get(3).get(x)));
                                 output.get(z).add(Integer.valueOf(optionsAndCoords.get(3).get(x + 1)));
-                                if(!output.get(z).isEmpty())
-                                    z+=1;
+                                if (!output.get(z).isEmpty())
+                                    z += 1;
                                 output.add(new ArrayList<>());
-                                System.out.println("post-1: " + output);
+                                if (debugMsg)
+                                    System.out.println("post-1: " + output);
                             } else {
                                 output.get(z).add(Integer.valueOf(optionsAndCoords.get(3).get(x)));
                                 output.get(z).add(Integer.valueOf(optionsAndCoords.get(3).get(x + 1)));
                             }
-                        } catch (Exception e){
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
                     x += 2;
                     i += 1;
                 }
-                if(curvesIndexList.size() < output.get(0).size() / 2 - 1){
+                if (curvesIndexList.size() < output.get(0).size() / 2 - 1) {
                     curvesIndexList.add(-1);
                 }
                 output.add(curvesIndexList);
                 int counter = 0;
-                while(output.size() > counter){
-                    if(output.get(counter).isEmpty())
+                while (output.size() > counter) {
+                    if (output.get(counter).isEmpty())
                         output.remove(counter);
                     counter += 1;
+                    if (output.contains(new ArrayList<>()) && output.size() <= counter) {
+                        counter = 0;
+                    }
                 }
-                System.out.println("inputArray: " + optionsAndCoords);
-                System.out.println("outputArray: " + output);
+                if (debugMsg) {
+                    System.out.println("inputArray: " + optionsAndCoords);
+                    System.out.println("outputArray: " + output);
+                }
                 return output;
             } else {
                 adder.add(-1);
