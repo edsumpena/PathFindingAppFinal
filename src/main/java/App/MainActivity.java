@@ -47,6 +47,7 @@ public class MainActivity extends JPanel {
     static boolean select = true;
     static boolean strafe = false;
     static boolean reverse = false;
+    static boolean spline = false;
     static int mouseX = 0;
     static int mouseY = 0;
     static boolean nPressed = false;
@@ -77,8 +78,7 @@ public class MainActivity extends JPanel {
     static int clearY = 0;
     static File prevFilePath;
     static ObjectMapper objectMapper = new ObjectMapper();
-    static int selectedColor = -1;
-    static int prevCircle = -1;
+    static int[] selectedCircle = {-1000, -1000, -1000};
 
     public static class threads extends Thread {    //Threads to house infinite loops
         static boolean unstoppable = true;
@@ -116,29 +116,6 @@ public class MainActivity extends JPanel {
                                 Thread.sleep(100);
                             } catch (Exception e) {
                                 e.printStackTrace();
-                            }
-                        }
-                        if (draw.clear) {     //Check if clearOldCircle() called--Lets me call elsewhere without JLayeredPane parameter
-                            draw.clear = false;
-                            int counter = 0;
-                            int q = 0;
-                            while (lp.getComponentCount() > q) {
-                                //System.out.println("searched component: " + lp.getComponent(q));
-                                //System.out.println("matcher Variables: " + clearX + ", " + clearY + " @ index#: " + q);
-                                if (lp.getComponent(q).toString().contains(String.valueOf(clearX)) &&
-                                        lp.getComponent(q).toString().contains(String.valueOf(clearY)) &&
-                                        lp.getComponent(q).toString().contains("15x15")) {
-                                    lp.getComponent(q).setVisible(false);   //Finding correct component index for circle + clearing it
-                                    lp.remove(q);                //Loop is necessary since component index is always changing + unknown
-                                    lp.revalidate();
-                                    draw.redraw();      //Calling repaint() method
-                                    q = 0;
-                                    counter = counter + 1;
-                                    if (counter >= 10) {   //Deals with a bug where calling .remove() sometimes doesn't clear circle
-                                        break;
-                                    }
-                                }
-                                q = q + 1;
                             }
                         }
                         try {
@@ -370,7 +347,7 @@ public class MainActivity extends JPanel {
         });
 
         draw.backgroundTransparent(true);  //Change settings of the Dot (circle)
-        draw.setColor("Yellow");
+        draw.addOrSetColor("Yellow", new String[]{"Add"});
         draw.visibility(true);
 
         layeredPane.add(openPathButton, 10, 0);
@@ -404,29 +381,41 @@ public class MainActivity extends JPanel {
                     curve = false;
                     strafe = false;
                     reverse = false;
+                    spline = false;
                 } else if (String.valueOf(item).equals("Curve")) {      //Robot turns to a location
                     curve = true;
                     line = false;
                     select = false;
                     strafe = false;
                     reverse = false;
+                    spline = false;
                 } else if (String.valueOf(item).equals("[Select]")) {
                     select = true;
                     line = false;
                     curve = false;
                     strafe = false;
                     reverse = false;
+                    spline = false;
                 } else if (String.valueOf(item).equals("Reverse")) {     //Robot backs up to a location
                     line = false;
                     select = false;
                     curve = false;
                     strafe = false;
                     reverse = true;
+                    spline = false;
                 } else if (String.valueOf(item).equals("Strafe")) {       //Robot strafes to a location (mechinum wheels only)
                     line = false;
                     select = false;
                     curve = false;
                     strafe = true;
+                    reverse = false;
+                    spline = false;
+                } else if (String.valueOf(item).equals("Spline To")) {
+                    spline = true;
+                    line = false;
+                    select = false;
+                    curve = false;
+                    strafe = false;
                     reverse = false;
                 }
             }
@@ -470,23 +459,21 @@ public class MainActivity extends JPanel {
                             circles.get(v2 + 1) + 15 >= mouseY && circles.get(v2 + 1) - 15 <= mouseY) {
                         if (selected) {
                             selected = false;
-                            circles.set(prevCircle + 2, selectedColor);
-                            selectedColor = -1;
-                            prevCircle = -1;
+                            selectedCircle[0] = -1000;
+                            selectedCircle[1] = -1000;
+                            selectedCircle[2] = -1000;
                             break;
                         } else if (!selected) {
                             selected = true;
-                            circles.set(prevCircle + 2, selectedColor);
-                            selectedColor = circles.get(v2 + 2);
-                            circles.set(v2 + 2, 11);
-                            prevCircle = v2;
+                            selectedCircle[0] = circles.get(v2);
+                            selectedCircle[1] = circles.get(v2 + 1);
+                            selectedCircle[2] = circles.get(v2 + 2);
                             break;
                         }
                     }
                     z2 += 1;
                     v2 += 3;
                 }
-                draw.redraw();
             }
         }
 
@@ -524,9 +511,28 @@ public class MainActivity extends JPanel {
                 mouseClicked = false;
                 circles.set(v, mouseX);
                 circles.set(v + 1, mouseY);
-                circles.remove(v + 2);
-                draw.setColor("Red");
-                draw.clearOldCircle();
+                selectedCircle[0] = circles.get(v);
+                selectedCircle[1] = circles.get(v + 1);
+                draw.addOrSetColor(draw.getColor(circles.get(v + 2)), new String[]{"Set", String.valueOf(v + 2)});
+                selectedCircle[2] = circles.get(v + 2);
+                try {
+                    params1.set(v / 3 * 2, String.valueOf(circles.get(v)));
+                    params1.set(v / 3 * 2 + 1, String.valueOf(circles.get(v + 1)));
+                } catch (Exception e) {
+                }
+                try {
+                    params3.set(v / 3 * 2 - 2, String.valueOf(circles.get(v)));
+                    params3.set(v / 3 * 2 - 1, String.valueOf(circles.get(v + 1)));
+                } catch (Exception e) {
+                }
+                System.out.println(circles);
+                System.out.println(params1);
+                System.out.println(params3);
+                lineSettingsAndParameters.clear();
+                lineSettingsAndParameters.add(settings);
+                lineSettingsAndParameters.add(params1);
+                lineSettingsAndParameters.add(params2);
+                lineSettingsAndParameters.add(params3);
             }
             v = 0;
             z = 0;
@@ -575,13 +581,16 @@ public class MainActivity extends JPanel {
                     draw.setDimension(15, 15);
                     draw.backgroundTransparent(true);
                     draw.visibility(true);
-                    draw.setColor("red");
-                    if (line) {
-                        draw.setLineSetting("straight");
-                    } else if (curve) {
-                        draw.setLineSetting("curve");
-                    }
-                    draw.redraw();
+                    if (line)
+                        draw.addOrSetColor("Red", new String[]{"Add"});
+                    else if (curve)
+                        draw.addOrSetColor("Magenta", new String[]{"Add"});
+                    else if (reverse)
+                        draw.addOrSetColor("Cyan", new String[]{"Add"});
+                    else if (strafe)
+                        draw.addOrSetColor("Green", new String[]{"Add"});
+                    else if (spline)
+                        draw.addOrSetColor("Pink", new String[]{"Add"});
                 }
             }
         }
@@ -597,6 +606,30 @@ public class MainActivity extends JPanel {
                 gPressed = false;
                 alreadyAdded = false;
                 nPressed = false;
+            } else if (e.getKeyCode() == KeyEvent.VK_DELETE && selected) {
+                if (circles.indexOf(selectedCircle[0]) > 2) {
+                    circles.remove(circles.indexOf(selectedCircle[1]) + 1);
+                    circles.remove(circles.indexOf(selectedCircle[0]));
+                    circles.remove(circles.indexOf(selectedCircle[1]));
+                    ArrayList<String> temp = params1;
+                    temp.add(params3.get(params3.size() - 2));
+                    temp.add(params3.get(params3.size() - 1));
+                    if (settings.size() > 1)
+                        settings.remove(temp.indexOf(String.valueOf(selectedCircle[0])) / 2 - 1);
+                    else
+                        settings.remove(0);
+                    params1.remove(params1.indexOf(String.valueOf(selectedCircle[0])));
+                    params1.remove(params1.indexOf(String.valueOf(selectedCircle[1])));
+                    params3.remove(params3.indexOf(String.valueOf(selectedCircle[0])));
+                    params3.remove(params3.indexOf(String.valueOf(selectedCircle[1])));
+                    params2.remove(params2.size() - 1);
+                    params2.remove(params2.size() - 1);
+
+                    selected = false;
+                    selectedCircle[0] = -1000;
+                    selectedCircle[1] = -1000;
+                    selectedCircle[2] = -1000;
+                }
             }
         }
 
@@ -622,12 +655,10 @@ public class MainActivity extends JPanel {
         static int loopStopper = 0;
         static int componentChecker = 0;
         static boolean isVisible = false;
-        static boolean clear = false;
         static int numOfIndexesRun = 0;
         static int numTimes2Run = 0;
         static int midX = 0;
         static int midY = 0;
-        static int lineSetting = -100;
         static int numTimes2Run2 = 0;
         static int loopflag2 = 0;
         static int lineInitVar2 = 0;
@@ -640,21 +671,6 @@ public class MainActivity extends JPanel {
         public static void setDimension(int width, int height) {        //Set width and height of circle
             wid = width;
             hei = height;
-        }
-
-        public static void clearOldCircle() {       //If circle is moved manually with mouse, old circle is cleared
-            clear = true;
-        }
-
-        public static void setLineSetting(String setting) {
-            if (setting.equalsIgnoreCase("straight")) {
-                lineSetting = 0;
-            } else if (setting.equalsIgnoreCase("curve")) {
-                lineSetting = 1;
-            } else {
-                lineSetting = -100;
-                System.out.println("Error: Setting '" + setting + "' does not exist.");
-            }
         }
 
         public static void visibility(boolean visible) {  //Change visibility of circle
@@ -673,31 +689,164 @@ public class MainActivity extends JPanel {
             redrawCircle = true;
         }       //Allows paintComponent method to refresh after runtime
 
-        public static void setColor(String color) {  //Adds color choice to ArrayList of circles (Once again not very efficient)
+        public static int getColorIndex(String color) {  //Adds color choice to ArrayList of circles (Once again not very efficient)
             if (color.equalsIgnoreCase("white")) {
-                circles.add(0);
+                return 0;
             } else if (color.equalsIgnoreCase("light gray")) {
-                circles.add(1);
+                return 1;
             } else if (color.equalsIgnoreCase("gray")) {
-                circles.add(2);
+                return 2;
             } else if (color.equalsIgnoreCase("dark gray")) {
-                circles.add(3);
+                return 3;
             } else if (color.equalsIgnoreCase("black")) {
-                circles.add(4);
+                return 4;
             } else if (color.equalsIgnoreCase("red")) {
-                circles.add(5);
+                return 5;
             } else if (color.equalsIgnoreCase("pink")) {
-                circles.add(6);
+                return 6;
             } else if (color.equalsIgnoreCase("orange")) {
-                circles.add(7);
+                return 7;
             } else if (color.equalsIgnoreCase("yellow")) {
-                circles.add(8);
+                return 8;
             } else if (color.equalsIgnoreCase("magenta")) {
-                circles.add(9);
+                return 9;
             } else if (color.equalsIgnoreCase("cyan")) {
-                circles.add(10);
+                return 10;
             } else if (color.equalsIgnoreCase("blue")) {
-                circles.add(11);
+                return 11;
+            } else if (color.equalsIgnoreCase("green")) {
+                return 12;
+            } else {
+                return -1;
+            }
+        }
+
+        public static String getColor(int index) {
+            String result = "error";
+            switch (index) {
+                case 0:
+                    result = "white";
+                    break;
+                case 1:
+                    result = "light gray";
+                    break;
+                case 2:
+                    result = "gray";
+                    break;
+                case 3:
+                    result = "dark gray";
+                    break;
+                case 4:
+                    result = "black";
+                    break;
+                case 5:
+                    result = "red";
+                    break;
+                case 6:
+                    result = "pink";
+                    break;
+                case 7:
+                    result = "orange";
+                    break;
+                case 8:
+                    result = "yellow";
+                    break;
+                case 9:
+                    result = "magenta";
+                    break;
+                case 10:
+                    result = "cyan";
+                    break;
+                case 11:
+                    result = "blue";
+                    break;
+                case 12:
+                    result = "green";
+                    break;
+            }
+            return result;
+        }
+
+        public static void addOrSetColor(String color, String[] setColor) {
+            if (color.equalsIgnoreCase("white")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(0);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 0);
+                }
+            } else if (color.equalsIgnoreCase("light gray")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(1);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 1);
+                }
+            } else if (color.equalsIgnoreCase("gray")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(2);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 2);
+                }
+                ;
+            } else if (color.equalsIgnoreCase("dark gray")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(3);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 3);
+                }
+            } else if (color.equalsIgnoreCase("black")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(4);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 4);
+                }
+            } else if (color.equalsIgnoreCase("red")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(5);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 5);
+                }
+            } else if (color.equalsIgnoreCase("pink")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(6);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 6);
+                }
+            } else if (color.equalsIgnoreCase("orange")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(7);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 7);
+                }
+            } else if (color.equalsIgnoreCase("yellow")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(8);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 8);
+                }
+            } else if (color.equalsIgnoreCase("magenta")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(9);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 9);
+                }
+            } else if (color.equalsIgnoreCase("cyan")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(10);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 10);
+                }
+            } else if (color.equalsIgnoreCase("blue")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(11);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 11);
+                }
+            } else if (color.equalsIgnoreCase("green")) {
+                if (setColor[0].equalsIgnoreCase("add")) {
+                    circles.add(12);
+                } else if (setColor[0].equalsIgnoreCase("set")) {
+                    circles.set((Integer.valueOf(setColor[1])), 12);
+                }
             }
         }
 
@@ -715,32 +864,32 @@ public class MainActivity extends JPanel {
                     paintPanel.setVisible(isVisible);
 
                     g.setColor(Color.RED);
-                    g.fillOval(800, 500, 15,15);
+                    g.fillOval(800, 500, 15, 15);
                     g.setColor(Color.BLACK);
                     g.drawString(" = Line", 817, 512);
 
                     g.setColor(Color.MAGENTA);
-                    g.fillOval(800, 530, 15,15);
+                    g.fillOval(800, 530, 15, 15);
                     g.setColor(Color.BLACK);
                     g.drawString(" = Curve", 817, 542);
 
                     g.setColor(Color.CYAN);
-                    g.fillOval(800, 560, 15,15);
+                    g.fillOval(800, 560, 15, 15);
                     g.setColor(Color.BLACK);
                     g.drawString(" = Reverse", 817, 572);
 
                     g.setColor(Color.GREEN);
-                    g.fillOval(800, 590, 15,15);
+                    g.fillOval(800, 590, 15, 15);
                     g.setColor(Color.BLACK);
                     g.drawString(" = Strafe", 817, 602);
 
                     g.setColor(Color.PINK);
-                    g.fillOval(800, 620, 15,15);
+                    g.fillOval(800, 620, 15, 15);
                     g.setColor(Color.BLACK);
                     g.drawString(" = Spline", 817, 632);
 
                     g.setColor(Color.ORANGE);
-                    g.fillOval(800, 650, 15,15);
+                    g.fillOval(800, 650, 15, 15);
                     g.setColor(Color.BLACK);
                     g.drawString(" = Arm/Servo", 817, 662);
 
@@ -751,7 +900,16 @@ public class MainActivity extends JPanel {
                                 (settings.size() < circles.size() / 3 - 1 && circles.size() / 3 >= 2)) {
                             lineSettingsAndParameters.clear();
 
-                            settings.add(getCurrentSetting(lineSetting));
+                            if (line)
+                                settings.add(getCurrentSetting(0));
+                            else if (curve)
+                                settings.add(getCurrentSetting(1));
+                            else if (reverse)
+                                settings.add(getCurrentSetting(2));
+                            else if (strafe)
+                                settings.add(getCurrentSetting(3));
+                            else if (spline)
+                                settings.add(getCurrentSetting(4));
                             params1.add(String.valueOf(circles.get(circles.size() - 6)));
                             params1.add(String.valueOf(circles.get(circles.size() - 5)));
                             params2.add("N/A");
@@ -770,29 +928,56 @@ public class MainActivity extends JPanel {
 
                     ArrayList<ArrayList<Integer>> points2draw = LineArrayProcessor.polyLineList(lineSettingsAndParameters);
                     if (points2draw.get(0).get(0) != -1 && points2draw.get(0).get(0) != -2) {
-                        if (lineSetting == 1) {
-
-                        } else if (lineSetting == -100) {
-                            System.out.println("Error: Invalid Line Setting! (lineSetting index = " + lineSetting + ")");
-                        } else {
-                            while (points2draw.size() > numOfIndexesRun) {
-                                g.setColor(Color.BLACK);
-                                try {
-                                    if (points2draw.get(numOfIndexesRun).size() == 4)
-                                        g.drawLine(points2draw.get(numOfIndexesRun).get(0) + xOffset,
-                                                points2draw.get(numOfIndexesRun).get(1) + yOffset,
-                                                points2draw.get(numOfIndexesRun).get(2) + xOffset,
-                                                points2draw.get(numOfIndexesRun).get(3) + yOffset);
-                                    else
-                                        g.drawPolyline(LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2),
-                                                LineArrayProcessor.extractY(points2draw.get(numOfIndexesRun), 2),
-                                                LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2).length);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                        numOfIndexesRun = 0;
+                        componentChecker = 0;
+                        Graphics2D g2d = (Graphics2D) g;
+                        if (points2draw.get(points2draw.size() - 1).contains(0)) {
+                            while (points2draw.size() - 1 > numOfIndexesRun) {
+                                if (points2draw.get(points2draw.size() - 1).get(numOfIndexesRun) == 0) {
+                                    g2d.setColor(Color.BLACK);
+                                    GeneralPath curvedLine = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
+                                    curvedLine.moveTo(points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2),
+                                            points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1));
+                                    curvedLine.curveTo(points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 2),
+                                            points2draw.get(numOfIndexesRun - 1).get(points2draw.get(numOfIndexesRun - 1).size() - 1), 100, 100,
+                                            points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 2),
+                                            points2draw.get(numOfIndexesRun).get(points2draw.get(numOfIndexesRun).size() - 1));
+                                    curvedLine.closePath();
+                                    g2d.draw(curvedLine);
                                 }
                                 numOfIndexesRun += 1;
                             }
                         }
+                        numOfIndexesRun = 0;
+                        componentChecker = 0;
+                        if (points2draw.get(points2draw.size() - 1).contains(-1)) {
+                            while (points2draw.size() - 1 > numOfIndexesRun) {
+                                if (points2draw.get(points2draw.size() - 1).get(numOfIndexesRun) == -1) {
+                                    g.setColor(Color.BLACK);
+                                    try {
+                                        if (points2draw.get(numOfIndexesRun).size() == 4) {
+                                            g.drawLine(points2draw.get(numOfIndexesRun).get(0) + xOffset + 5,
+                                                    points2draw.get(numOfIndexesRun).get(1) + yOffset + 5,
+                                                    points2draw.get(numOfIndexesRun).get(2) + xOffset + 5,
+                                                    points2draw.get(numOfIndexesRun).get(3) + yOffset + 5);
+                                        } else {
+                                            g.drawPolyline(LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2),
+                                                    LineArrayProcessor.extractY(points2draw.get(numOfIndexesRun), 2),
+                                                    LineArrayProcessor.extractX(points2draw.get(numOfIndexesRun), 2).length);
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                numOfIndexesRun += 1;
+                            }
+                        }
+                    }
+                    if (selected) {
+                        g.setColor(Color.BLUE);
+                        g.fillOval(selectedCircle[0] + xOffset - 2, selectedCircle[1] + yOffset - 2, 18, 18);
+                    } else {
+
                     }
                     numOfIndexesRun = 0;
                     componentChecker = 0;
@@ -834,6 +1019,8 @@ public class MainActivity extends JPanel {
                             case (11):
                                 g.setColor(Color.BLUE);
                                 break;
+                            case (12):
+                                g.setColor(Color.GREEN);
                         }
                         g.fillOval(circles.get(componentChecker) + xOffset, circles.get(componentChecker + 1) + yOffset, wid, hei);
                         numOfIndexesRun += 1;
