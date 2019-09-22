@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class SerializeAndDeserialize {
     public static void serialize(ArrayList<Integer> circles, ArrayList<ArrayList<String>> lines, ArrayList<Integer> arm,
-                                 String filePath, String pathName, String traj, String loc, String motors) {
+                                 String filePath, String pathName, String traj, String motors, String armParams) {
         File file = new File(filePath + "\\" + pathName + ".path");
         file.getParentFile().mkdir();
         file.setExecutable(true);
@@ -66,7 +66,7 @@ public class SerializeAndDeserialize {
             FileWriter fw = new FileWriter(f, true);
             BufferedWriter bw = new BufferedWriter(fw);
             bw.newLine();
-            bw.write("TRAJ:" + traj + ",MOTORS;" + motors + ",LOCATION-" + loc);
+            bw.write("TRAJ:" + traj + ",MOTORS;" + motors + ",ARM_" + armParams);
             bw.flush();
             bw.close();
         } catch (IOException ioe) {

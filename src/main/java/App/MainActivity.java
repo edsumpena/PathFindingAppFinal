@@ -69,7 +69,6 @@ public class MainActivity extends JPanel {
     static ArrayList<String> params1 = new ArrayList<>();
     static ArrayList<String> params2 = new ArrayList<>();
     static ArrayList<String> params3 = new ArrayList<>();
-    static ArrayList<Integer> motorExecutedLocation = new ArrayList<>();
     static ArrayList<String> motorNames = new ArrayList<>();
     static ArrayList<Integer> motorData = new ArrayList<>();
     static String pathName = "untitled path";
@@ -338,12 +337,12 @@ public class MainActivity extends JPanel {
                             0, 1, 3), lineSettingsAndParameters.get(0),
                             DriverConstraintsWrapper.getDriveConstraints(), pathName);
                     String motors = objectMapper.writeValueAsString(motorNames);
-                    String moveMotorLocation = objectMapper.writeValueAsString(motorExecutedLocation);
                     String trajectory = objectMapper.writeValueAsString(driveTraj);
+                    String armParams = objectMapper.writeValueAsString(armServoList);
                     String encodedTraj = Base64.getEncoder().encodeToString(trajectory.getBytes());
-                    String encodedLoc = Base64.getEncoder().encodeToString(moveMotorLocation.getBytes());
                     String encodedMotors = Base64.getEncoder().encodeToString(motors.getBytes());
-                    tf.setText("TRAJ:" + encodedTraj + ",MOTORS;" + encodedMotors + ",LOCATION-" + encodedLoc);
+                    String encodedArm = Base64.getEncoder().encodeToString(armParams.getBytes());
+                    tf.setText("TRAJ:" + encodedTraj + ",MOTORS;" + encodedMotors + ",ARM_" + encodedArm);
                 } catch (Exception e) {
                     System.err.println(e.toString());
                 }
@@ -386,16 +385,16 @@ public class MainActivity extends JPanel {
                     armServoList = SerializeAndDeserialize.deserialize(armDir, false);
 
                     String trajectory = SerializeAndDeserialize.readJson(trajDir);
-                    String motorString = trajectory.substring(trajectory.indexOf(";") + 1, trajectory.lastIndexOf("-") - 9);
+                    String motorString = trajectory.substring(trajectory.indexOf(";") + 1, trajectory.lastIndexOf("_") - 5);
                     motorString = motorString.replace("[\"", "");
                     motorString = motorString.replace("\"]", "");
                     motorNames = new ArrayList<>(Arrays.asList(motorString.split("\",\"")));
 
-                    String motorIndexes = trajectory.substring(trajectory.lastIndexOf("-") + 1);
-                    motorIndexes = motorIndexes.replace("[", "");
-                    motorIndexes = motorIndexes.replace("]", "");
-                    motorExecutedLocation = ArrayListConverters.stringArrayToIntArray(
-                            new ArrayList<>(Arrays.asList(motorIndexes.split(","))));
+                    String armVals = trajectory.substring(trajectory.lastIndexOf("_") + 1);
+                    armVals = armVals.replace("[", "");
+                    armVals = armVals.replace("]", "");
+                    ArrayList<Integer> example = ArrayListConverters.stringArrayToIntArray(
+                            new ArrayList<>(Arrays.asList(armVals.split(","))));
 
                     settings = lineSettingsAndParameters.get(0);
                     params1 = lineSettingsAndParameters.get(1);
@@ -457,19 +456,19 @@ public class MainActivity extends JPanel {
                             }
                             prevFilePath = fileChooser.getCurrentDirectory();
                             String motors = "";
-                            String loc = "";
                             String traj = "";
+                            String arm = "";
                             try {
                                 TrajBuilderWrapper driveTraj = new TrajBuilderWrapper(FromAndToPose2D.pointsToPose2d(circles,
                                         0, 1, 3), lineSettingsAndParameters.get(0),
                                         DriverConstraintsWrapper.getDriveConstraints(), pathName);
                                 motors = objectMapper.writeValueAsString(motorNames);
-                                loc = objectMapper.writeValueAsString(motorExecutedLocation);
+                                arm = objectMapper.writeValueAsString(armServoList);
                                 traj = objectMapper.writeValueAsString(driveTraj);
                             } catch (Exception e) {
                             }
                             SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, armServoList, String.valueOf(fileToSave),
-                                    fileNoExt, traj, loc, motors);
+                                    fileNoExt, traj, motors, arm);
                             ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(), fileNoExt);
                         }
                     } else {    //If not a duplicate file name and contains .path ext in the name
@@ -481,19 +480,19 @@ public class MainActivity extends JPanel {
                         prevFilePath = fileChooser.getCurrentDirectory();
                         currentlySelected = fileNoExt;
                         String motors = "";
-                        String loc = "";
                         String traj = "";
+                        String arm = "";
                         try {
                             TrajBuilderWrapper driveTraj = new TrajBuilderWrapper(FromAndToPose2D.pointsToPose2d(circles,
                                     0, 1, 3), lineSettingsAndParameters.get(0),
                                     DriverConstraintsWrapper.getDriveConstraints(), pathName);
                             motors = objectMapper.writeValueAsString(motorNames);
-                            loc = objectMapper.writeValueAsString(motorExecutedLocation);
+                            arm = objectMapper.writeValueAsString(armServoList);
                             traj = objectMapper.writeValueAsString(driveTraj);
                         } catch (Exception e) {
                         }
                         SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, armServoList, String.valueOf(fileToSave),
-                                fileNoExt, traj, loc, motors);
+                                fileNoExt, traj, motors, arm);
 
                         ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(), fileNoExt);
                     }
@@ -926,7 +925,6 @@ public class MainActivity extends JPanel {
                         mouseX + xOffset >= 0 && mouseY + yOffset >= 0 && (!select || (!currentlySelected.contains("[Select]") &&
                         !currentlySelected.contains("DCWheel"))) && !currentlySelected.contains("Select")) {  //Checks if mouse is in the screen & in field image
                     motorNames.add(currentlySelected);
-                    motorExecutedLocation.add(circles.size() / 3);
                     if (!currentlySelected.contains("DCWheel")) {
                         armServoList.add(mouseX);
                         armServoList.add(mouseY);
