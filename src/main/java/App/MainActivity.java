@@ -263,7 +263,7 @@ public class MainActivity extends JPanel {
         types.add("Servo");
         MotorSetup.exportMotors(name, types);
         try {
-            image = ImageIO.read(new File("res/images/ruckus_field_lines.png"));  //Import FTC Field Image
+            image = ImageIO.read(new File("res/images/SkystoneFieldv1.png"));  //Import FTC Field Image
         } catch (Exception e) {
             //e.printStackTrace();
             System.exit(1);
