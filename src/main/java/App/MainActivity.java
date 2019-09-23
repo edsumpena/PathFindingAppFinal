@@ -24,7 +24,6 @@ import App.ReadingAndWriting.SerializeAndDeserialize;
 import App.ReadingAndWriting.ZipAndUnzip;
 import App.Wrappers.DriverConstraintsWrapper;
 import App.Wrappers.TrajBuilderWrapper;
-import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -263,7 +262,7 @@ public class MainActivity extends JPanel {
         types.add("Servo");
         MotorSetup.exportMotors(name, types);
         try {
-            image = ImageIO.read(new File("res/images/SkystoneFieldv1.png"));  //Import FTC Field Image
+            image = ImageIO.read(new File("res/images/SkystoneField.png"));  //Import FTC Field Image
         } catch (Exception e) {
             //e.printStackTrace();
             System.exit(1);
