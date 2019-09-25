@@ -69,7 +69,6 @@ public class MainActivity extends JPanel {
     static ArrayList<String> params2 = new ArrayList<>();
     static ArrayList<String> params3 = new ArrayList<>();
     static ArrayList<String> motorNames = new ArrayList<>();
-    static ArrayList<Integer> motorData = new ArrayList<>();
     static String pathName = "untitled path";
     static String currentlySelected = "[Select]";
     static int z = 0;
@@ -333,15 +332,11 @@ public class MainActivity extends JPanel {
             public void actionPerformed(ActionEvent arg0) {     //Encodes TrajectoryBuilder, Motor Names, and Motor locations in Base64
                 try {
                     TrajBuilderWrapper driveTraj = new TrajBuilderWrapper(FromAndToPose2D.pointsToPose2d(circles,
-                            0, 1, 3), lineSettingsAndParameters.get(0),
+                            0, 1, 3), lineSettingsAndParameters.get(0), motorNames, armServoList,
                             DriverConstraintsWrapper.getDriveConstraints(), pathName);
-                    String motors = objectMapper.writeValueAsString(motorNames);
                     String trajectory = objectMapper.writeValueAsString(driveTraj);
-                    String armParams = objectMapper.writeValueAsString(armServoList);
                     String encodedTraj = Base64.getEncoder().encodeToString(trajectory.getBytes());
-                    String encodedMotors = Base64.getEncoder().encodeToString(motors.getBytes());
-                    String encodedArm = Base64.getEncoder().encodeToString(armParams.getBytes());
-                    tf.setText("TRAJ:" + encodedTraj + ",MOTORS;" + encodedMotors + ",ARM_" + encodedArm);
+                    tf.setText(encodedTraj);
                 } catch (Exception e) {
                     System.err.println(e.toString());
                 }
@@ -372,37 +367,35 @@ public class MainActivity extends JPanel {
                     String name = String.valueOf(fileToRead).substring(String.valueOf(fileToRead).lastIndexOf("\\") + 1,
                             String.valueOf(fileToRead).indexOf("."));
                     pathName = name;
+
                     String cirDir = fileChooser.getCurrentDirectory() + "\\" + name + "Circles.cir";    //Sets .cir file containing serialized circle array as current directory
-                    String lineDir = fileChooser.getCurrentDirectory() + "\\" + name + "Traj.line";     //Sets .line file containing serialized line array as current directory
-                    String trajDir = fileChooser.getCurrentDirectory() + "\\" + name + "Json.traj";
+                    String lineDir = fileChooser.getCurrentDirectory() + "\\" + name + "Line.ln";     //Sets .ln file containing serialized line array as current directory
+                    String trajDir = fileChooser.getCurrentDirectory() + "\\" + name + "Trajectory.traj";
                     String armDir = fileChooser.getCurrentDirectory() + "\\" + name + "Params.arm";
+                    String motorDir = fileChooser.getCurrentDirectory() + "\\" + name + "MotorSeq.mot";
+
                     draw.setDimension(15, 15);
                     draw.backgroundTransparent(true);
                     draw.visibility(true);
+
                     circles = SerializeAndDeserialize.deserialize(cirDir, false);    //Gets deserialized ArrayList and defines variable
                     lineSettingsAndParameters = SerializeAndDeserialize.deserialize(lineDir, true);  //Deserializes the arrays (see SerializeAndDeserialize class)
                     armServoList = SerializeAndDeserialize.deserialize(armDir, false);
+                    motorNames = SerializeAndDeserialize.deserializeMotors(motorDir);
 
                     String trajectory = SerializeAndDeserialize.readJson(trajDir);
-                    String motorString = trajectory.substring(trajectory.indexOf(";") + 1, trajectory.lastIndexOf("_") - 5);
-                    motorString = motorString.replace("[\"", "");
-                    motorString = motorString.replace("\"]", "");
-                    motorNames = new ArrayList<>(Arrays.asList(motorString.split("\",\"")));
-
-                    String armVals = trajectory.substring(trajectory.lastIndexOf("_") + 1);
-                    armVals = armVals.replace("[", "");
-                    armVals = armVals.replace("]", "");
-                    ArrayList<Integer> example = ArrayListConverters.stringArrayToIntArray(
-                            new ArrayList<>(Arrays.asList(armVals.split(","))));
+                    System.out.println("Trajectory = " + trajectory);
 
                     settings = lineSettingsAndParameters.get(0);
                     params1 = lineSettingsAndParameters.get(1);
                     params2 = lineSettingsAndParameters.get(2);
                     params3 = lineSettingsAndParameters.get(3);
+
                     ZipAndUnzip.deleteAndOrRename(cirDir, "", "", true, false);
                     ZipAndUnzip.deleteAndOrRename(trajDir, "", "", true, false);
                     ZipAndUnzip.deleteAndOrRename(lineDir, "", "", true, false);
                     ZipAndUnzip.deleteAndOrRename(armDir, "", "", true, false);  //Deletes temporary files
+                    ZipAndUnzip.deleteAndOrRename(motorDir,"","",true,false);
 
                     prevFilePath = fileChooser.getCurrentDirectory();
                 } else if (result == JFileChooser.CANCEL_OPTION) {      //If cancel button is pressed
@@ -459,15 +452,13 @@ public class MainActivity extends JPanel {
                             String arm = "";
                             try {
                                 TrajBuilderWrapper driveTraj = new TrajBuilderWrapper(FromAndToPose2D.pointsToPose2d(circles,
-                                        0, 1, 3), lineSettingsAndParameters.get(0),
+                                        0, 1, 3), lineSettingsAndParameters.get(0), motorNames, armServoList,
                                         DriverConstraintsWrapper.getDriveConstraints(), pathName);
-                                motors = objectMapper.writeValueAsString(motorNames);
-                                arm = objectMapper.writeValueAsString(armServoList);
                                 traj = objectMapper.writeValueAsString(driveTraj);
                             } catch (Exception e) {
                             }
-                            SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, armServoList, String.valueOf(fileToSave),
-                                    fileNoExt, traj, motors, arm);
+                            SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, armServoList, motorNames,
+                                    String.valueOf(fileToSave), fileNoExt, traj);
                             ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(), fileNoExt);
                         }
                     } else {    //If not a duplicate file name and contains .path ext in the name
@@ -483,15 +474,13 @@ public class MainActivity extends JPanel {
                         String arm = "";
                         try {
                             TrajBuilderWrapper driveTraj = new TrajBuilderWrapper(FromAndToPose2D.pointsToPose2d(circles,
-                                    0, 1, 3), lineSettingsAndParameters.get(0),
+                                    0, 1, 3), lineSettingsAndParameters.get(0), motorNames, armServoList,
                                     DriverConstraintsWrapper.getDriveConstraints(), pathName);
-                            motors = objectMapper.writeValueAsString(motorNames);
-                            arm = objectMapper.writeValueAsString(armServoList);
                             traj = objectMapper.writeValueAsString(driveTraj);
                         } catch (Exception e) {
                         }
-                        SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, armServoList, String.valueOf(fileToSave),
-                                fileNoExt, traj, motors, arm);
+                        SerializeAndDeserialize.serialize(circles, lineSettingsAndParameters, armServoList, motorNames,
+                                String.valueOf(fileToSave), fileNoExt, traj);
 
                         ZipAndUnzip.zipFolder(fileToSave.getAbsolutePath(), fileNoExt);
                     }

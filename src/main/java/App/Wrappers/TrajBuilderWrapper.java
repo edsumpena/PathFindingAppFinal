@@ -5,6 +5,7 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,8 +17,11 @@ public class TrajBuilderWrapper {
 
     private List<Pose2d> poses;
     private DriveConstraints constraints;
+    private ArrayList<Integer> armParams;
+    private ArrayList<String> motors;
 
-    public TrajBuilderWrapper(ArrayList<Pose2d> pose2dList, ArrayList<String> options, DriveConstraints constraints, String name) {
+    public TrajBuilderWrapper(ArrayList<Pose2d> pose2dList, ArrayList<String> options, ArrayList<String> motors, ArrayList<Integer> armParams,
+                              DriveConstraints constraints, String name) {
         driveConstraints = constraints;
         pose2dWrapper = new ArrayList<>();
         pose2dWrapper.addAll(pose2dList);
@@ -26,6 +30,8 @@ public class TrajBuilderWrapper {
         this.name = name;
         poses = pose2dList;
         this.constraints = constraints;
+        this.armParams = armParams;
+        this.motors = motors;
     }
 
     public TrajBuilderWrapper() {
