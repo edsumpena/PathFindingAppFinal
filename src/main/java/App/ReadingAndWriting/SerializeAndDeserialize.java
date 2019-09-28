@@ -167,7 +167,7 @@ public class SerializeAndDeserialize {
             return deseralizedStringArrayList;
     }
 
-    public static String readJson(String filePathAndName){
+    public static String readTxt(String filePathAndName){
         String jsonTraj = "Error reading file!";
         try{
             FileReader fr = new FileReader(filePathAndName);

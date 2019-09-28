@@ -26,7 +26,7 @@ public class ZipAndUnzip {
             }
             ze= new ZipEntry(pathName + "Line.ln");
             zos.putNextEntry(ze);
-            in = new FileInputStream(zipFilePath + "\\" + pathName + "Traj.line");
+            in = new FileInputStream(zipFilePath + "\\" + pathName + "Lines.ln");
 
             int len2;
             while ((len2 = in.read(buffer)) > 0) {
@@ -35,7 +35,7 @@ public class ZipAndUnzip {
 
             ze= new ZipEntry(pathName + "Trajectory.traj");
             zos.putNextEntry(ze);
-            in = new FileInputStream(zipFilePath + "\\" + pathName + "Json.traj");
+            in = new FileInputStream(zipFilePath + "\\" + pathName + "Trajectory.traj");
 
             int len3;
             while ((len3 = in.read(buffer)) > 0) {
