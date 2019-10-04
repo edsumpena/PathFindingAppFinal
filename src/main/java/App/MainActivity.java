@@ -260,9 +260,9 @@ public class MainActivity extends JPanel {
         layeredPane.setPreferredSize(new Dimension(1300, 750));
         BufferedImage image = null;
         try {
-            image = ImageIO.read(new File("res/images/SkyStoneFieldv1.png"));  //Import FTC Field Image
+            image = ImageIO.read(new File("res/images/SkyStoneFieldv1.png"));  //Import FTC Field Image     //res/images/SkyStoneFieldv1.png
         } catch (Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
             System.exit(1);
         }
         Image newImage = image.getScaledInstance(750, 750, java.awt.Image.SCALE_SMOOTH);  //Scale up the image in size
